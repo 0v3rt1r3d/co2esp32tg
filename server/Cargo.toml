@@ -1,0 +1,8 @@
+[package]
+name = "co2esp32tgserver"
+version = "0.1.0"
+authors = ["Alexander Gruzintsev <overtired2014@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rocket = "0.4.5"
