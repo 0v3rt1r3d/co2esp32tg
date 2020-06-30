@@ -13,6 +13,14 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "Odroid [sync remote]",
+            "type": "shell",
+            "command": "./sync_remote.sh",
+            "options": {
+                "cwd": "odroid"
+            }
         }
     ]
 }

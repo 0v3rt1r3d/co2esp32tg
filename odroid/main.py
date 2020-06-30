@@ -11,6 +11,8 @@ import sys
 import syslog
 import time
 
+URL = "http://192.168.1.66:443/sensors"
+
 interrupted = False
 
 def sigint_handler(sig, frame):
@@ -37,12 +39,17 @@ if __name__ == "__main__":
     sleep_time_s = 1
     while not interrupted:
         data = json.dumps(get_values())
-        response = requests.post(url = "http://192.168.1.66:443/sensors", data = data)
-        print(
-            "Sent sensors data, http code = {}; body = {}".format(
-                response.status_code,
-                response.text
-            ),
-            file=sys.stderr
-        )
+        try:
+            response = requests.post(url = URL, data = data)
+            print(
+                "Sent sensors data, http code = {}; body = {}".format(
+                    response.status_code,
+                    response.text
+                ),
+                file=sys.stderr
+            )
+        except Exception:
+            syslog.syslog(syslog.LOG_WARNING, "Failed to send data")
+            print("Failed to send data to {}".format(URL), file=sys.stderr)
+
         time.sleep(sleep_time_s)
