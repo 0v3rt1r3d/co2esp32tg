@@ -1,9 +1,11 @@
 [package]
 name = "co2esp32tg"
 version = "0.1.0"
-authors = ["Alexander Gruzintsev <overtired2014@gmail.com>"]
+authors = ["Alexander Gruzintsev <0v3rt1r3d@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 rocket = "0.4.5"
-rusqlite = "0.23.1"
+diesel = { version = "1.4.0", features = ["sqlite"] }
+gnuplot = "0.0.37"
+dotenv = "0.15.0"
