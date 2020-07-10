@@ -5,7 +5,7 @@ authors = ["Alexander Gruzintsev <0v3rt1r3d@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-rocket = "0.4.5"
 diesel = { version = "1.4.0", features = ["sqlite"] }
-gnuplot = "0.0.37"
 dotenv = "0.15.0"
+plotters = "0.2.15"
+rocket = "0.4.5"

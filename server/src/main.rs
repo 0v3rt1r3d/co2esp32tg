@@ -1,20 +1,10 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use] extern crate rocket;
-#[macro_use] extern crate diesel;
 extern crate dotenv;
+extern crate plotters;
 
-use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
-use dotenv::dotenv;
 use rocket::State;
-use std::env;
-
-pub mod models;
-pub mod schema;
-
-use models::*;
-
 
 struct Storage {
     sensor_data: std::vec::Vec::<std::string::String>,
@@ -50,27 +40,47 @@ fn updates(data: String, storage: State<StoragePtr>) ->&'static str {
 }
 
 #[get("/chart")]
-fn graphic() -> &'static str {
-    use gnuplot::{Figure, Caption, Color};
+fn chart() -> String {
+    use plotters::prelude::*;
+    let root = BitMapBackend::new(
+        "/Users/overtired/Desktop/0.png",
+        (640, 480)
+    ).into_drawing_area();
+    root.fill(&WHITE);
+    let mut chart1 = ChartBuilder::on(&root)
+        .caption("y=x^2", ("sans-serif", 50).into_font())
+        .margin(5)
+        .x_label_area_size(30)
+        .y_label_area_size(30)
+        .build_ranged(-1f32..1f32, -0.1f32..1f32)
+        .expect("NO");
 
-    let x = [0u32, 1, 2, 3, 4, 5];
-    let y = [3u32, 4, 5, 1, 5, 2];
-    let mut fg = Figure::new();
-    fg.axes2d()
-    .lines(&x, &y, &[Caption("Samle chart"), Color("black")]);
-    fg.save_to_png("/Users/overtired/Desktop/graphic.png", 2000u32, 2000u32);
-    fg.set_offset(100f32, 100f32);
+    chart1.configure_mesh().draw();
 
-    return "Drawn";
+    chart1
+        .draw_series(LineSeries::new(
+            (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, x * x)),
+            &RED,
+        )).expect("No2")
+        .label("y = x^2")
+        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+
+    chart1
+        .configure_series_labels()
+        .background_style(&WHITE.mix(0.8))
+        .border_style(&BLACK)
+        .draw().expect("No3");
+
+    return String::from("Ok");
 }
 
-fn establish_connection() -> SqliteConnection {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
-    SqliteConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
-}
+// fn establish_connection() -> SqliteConnection {
+//     dotenv().ok();
+//     let database_url = env::var("DATABASE_URL")
+//         .expect("DATABASE_URL must be set");
+//     SqliteConnection::establish(&database_url)
+//         .expect(&format!("Error connecting to {}", database_url))
+// }
 
 
 // fn test_db() {
@@ -90,9 +100,9 @@ fn establish_connection() -> SqliteConnection {
 // }
 
 fn main() {
-    // test_db();
+    println!("http://0.0.0.0:443/chart");
     rocket::ignite()
-        .mount("/", routes![index, sensors, updates, graphic])
+        .mount("/", routes![index, sensors, updates, chart])
         .manage(make_async_storage())
         .launch();
 }
