@@ -1,42 +1,68 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use] extern crate rocket;
+
 extern crate dotenv;
 extern crate plotters;
 
 use rocket::State;
+use serde_json;
 
-struct Storage {
-    sensor_data: std::vec::Vec::<std::string::String>,
-    update_data: std::vec::Vec::<std::string::String>,
-}
+mod storage;
 
-type StoragePtr = std::sync::Arc<std::sync::Mutex<Storage>>;
+type StoragePtr = std::sync::Arc<std::sync::Mutex<storage::Storage>>;
 
 fn make_async_storage() -> StoragePtr {
-    std::sync::Arc::new(std::sync::Mutex::new(Storage{
-        sensor_data: std::vec::Vec::<std::string::String>::new(),
-        update_data: std::vec::Vec::<std::string::String>::new(),
-    }))
+    std::sync::Arc::new(std::sync::Mutex::new(storage::Storage::new(String::from("sensors.db"))))
 }
 
 #[get("/")]
 fn index(storage: State<StoragePtr>) -> String {
-    let storage = storage.lock();
-    let data = storage.unwrap();
-    return format!("Updates:\n{}\nSensors:\n{}", data.update_data.join("\n"), data.sensor_data.join("\n"));
+    // let storage = storage.lock();
+    // let data = storage.unwrap();
+    return format!(
+        "Sensors:\n{}",
+        (*storage.lock().unwrap())
+            .read().unwrap()
+            .iter()
+            .map(|data| {
+                format!(
+                    "{}, {}, {}, {}, {}",
+                    data.timestamp,
+                    match data.co2 {
+                        Some(value) => value.to_string(),
+                        None => String::from("NULL")
+                    },
+                    match data.humidity {
+                        Some(value) => value.to_string(),
+                        None => String::from("NULL")
+                    },
+                    match data.pressure {
+                        Some(value) => value.to_string(),
+                        None => String::from("NULL")
+                    },
+                    match data.temperature {
+                        Some(value) => value.to_string(),
+                        None => String::from("NULL")
+                    },
+                )
+            })
+            .collect::<std::vec::Vec<String>>()
+            .join("\n")
+        );
 }
 
 #[post("/sensors", data = "<data>")]
 fn sensors(data: String, storage: State<StoragePtr>) ->&'static str {
-    (*storage.lock().unwrap()).sensor_data.push(data);
+    let data: storage::SensorsData = serde_json::from_str(&data).unwrap();
+    (*storage.lock().unwrap()).save_sensors(data);
     return "Ok";
 }
 
 #[post("/updates", data = "<data>")]
 fn updates(data: String, storage: State<StoragePtr>) ->&'static str {
-    (*storage.lock().unwrap()).update_data.push(data);
-    return "Ok";
+    // (*storage.lock().unwrap()).push(data);
+    return "Did nothing";
 }
 
 #[get("/chart")]
@@ -73,31 +99,6 @@ fn chart() -> String {
 
     return String::from("Ok");
 }
-
-// fn establish_connection() -> SqliteConnection {
-//     dotenv().ok();
-//     let database_url = env::var("DATABASE_URL")
-//         .expect("DATABASE_URL must be set");
-//     SqliteConnection::establish(&database_url)
-//         .expect(&format!("Error connecting to {}", database_url))
-// }
-
-
-// fn test_db() {
-//     use self::schema::sensor_data::dsl::*;
-//     let connection = establish_connection();
-//     let results = sensors_data
-//         .limit(5)
-//         .load::<SensorsData>(&connection)
-//         .expect("Error loading data");
-
-//     // println!("Displaying {} datas", results.len());
-//     // for data in results {
-//     //     println!("{}", data.timestamp);
-//     //     println!("----------\n");
-//     //     println!("{}", data.humidity);
-//     // }
-// }
 
 fn main() {
     println!("http://0.0.0.0:443/chart");
