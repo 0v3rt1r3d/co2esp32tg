@@ -18,8 +18,6 @@ fn make_async_storage() -> StoragePtr {
 
 #[get("/")]
 fn index(storage: State<StoragePtr>) -> String {
-    // let storage = storage.lock();
-    // let data = storage.unwrap();
     return format!(
         "Sensors:\n{}",
         (*storage.lock().unwrap())
@@ -61,46 +59,113 @@ fn sensors(data: String, storage: State<StoragePtr>) ->&'static str {
 
 #[post("/updates", data = "<data>")]
 fn updates(data: String, storage: State<StoragePtr>) ->&'static str {
-    // (*storage.lock().unwrap()).push(data);
     return "Did nothing";
 }
 
-#[get("/chart")]
-fn chart() -> String {
+fn save_chart(
+    filename: String,
+    title: String,
+    x: std::vec::Vec<u32>,
+    y: std::vec::Vec<f64>,
+) {
     use plotters::prelude::*;
-    let root = BitMapBackend::new(
-        "/Users/overtired/Desktop/0.png",
-        (640, 480)
-    ).into_drawing_area();
-    root.fill(&WHITE);
+    let first = x.first().unwrap();
+    let x : std::vec::Vec<f32> = x.iter().map(|it| (it - first) as f32).collect();
+
+
+    let root = BitMapBackend::new(&filename, (640, 480)).into_drawing_area();
+    root.fill(&WHITE).expect("Filled white");
+
+    let mut sorted_y: std::vec::Vec<f32> = y.clone().into_iter().map(|x| x as f32).collect();
+    sorted_y.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let mut chart1 = ChartBuilder::on(&root)
-        .caption("y=x^2", ("sans-serif", 50).into_font())
+        .caption(title, ("sans-serif", 50).into_font())
         .margin(5)
         .x_label_area_size(30)
         .y_label_area_size(30)
-        .build_ranged(-1f32..1f32, -0.1f32..1f32)
+        .build_ranged(
+            x.first().unwrap().clone() as f32 .. x.last().unwrap().clone() as f32, 
+            sorted_y.first().unwrap().clone() as f32..sorted_y.last().unwrap().clone() as f32
+        )
         .expect("NO");
 
-    chart1.configure_mesh().draw();
+    chart1.configure_mesh().draw().expect("Drawing mesh");
 
     chart1
         .draw_series(LineSeries::new(
-            (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, x * x)),
+            x.clone().into_iter().map(|a| a as f32).zip(y.clone().into_iter().map(|a| a as f32)),
             &RED,
-        )).expect("No2")
-        .label("y = x^2")
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+        )).expect("No3")
+        .label("real graph");
+    
+    
+    println!("x: {:?}", x.clone().into_iter().map(|a| a as f32).collect::<std::vec::Vec<f32>>());
+    println!("y: {:?}", y.clone().into_iter().map(|a| a as f32).collect::<std::vec::Vec<f32>>());
+    println!("x,y: {:?}", x.into_iter().map(|a| a as f32).zip(y.into_iter().map(|a| a as f32)).collect::<std::vec::Vec<(f32, f32)>>());
+}
 
-    chart1
-        .configure_series_labels()
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
-        .draw().expect("No3");
+#[get("/chart")]
+fn chart(storage: State<StoragePtr>) -> String {
+    let values = (*storage.lock().unwrap()).read().unwrap();
 
+    println!("Values: {:?}", values.iter().map(|it| {it.timestamp as f32}).collect::<std::vec::Vec<f32>>());
+    
+    save_chart(
+        String::from("/Users/overtired/Desktop/pressure.png"),
+        String::from("pressure"),
+        values.iter().map(|it| {it.timestamp}).collect(),
+        values.iter().map(|it| {
+            match it.pressure {
+                Some(v) => v,
+                None => 0f64
+            }
+        }).collect()
+    );
+    save_chart(
+        String::from("/Users/overtired/Desktop/humidity.png"),
+        String::from("humidity"),
+        values.iter().map(|it| {it.timestamp}).collect(),
+        values.iter().map(|it| {
+            match it.humidity {
+                Some(v) => v,
+                None => 0f64
+            }
+        }).collect()
+    );
+    save_chart(
+        String::from("/Users/overtired/Desktop/co2.png"),
+        String::from("co2"),
+        values.iter().map(|it| {it.timestamp}).collect(),
+        values.iter().map(|it| {
+            match it.co2 {
+                Some(v) => v,
+                None => 0f64
+            }
+        }).collect()
+    );
+    save_chart(
+        String::from("/Users/overtired/Desktop/temperature.png"),
+        String::from("temperature"),
+        values.iter().map(|it| {it.timestamp}).collect::<std::vec::Vec<u32>>(),
+        values.iter().map(|it| {
+            match it.temperature {
+                Some(v) => v,
+                None => 0f64
+            }
+        }).collect()
+    );
     return String::from("Ok");
 }
 
 fn main() {
+    println!("{:?}", 1594941781u32 as f64);
+    println!(
+        "{}\n{}\n{}\n{}",
+        String::from("file:///Users/overtired/Desktop/pressure.png"),
+        String::from("file:///Users/overtired/Desktop/humidity.png"),
+        String::from("file:///Users/overtired/Desktop/co2.png"),
+        String::from("file:///Users/overtired/Desktop/temperature.png"),
+    );
     println!("http://0.0.0.0:443/chart");
     rocket::ignite()
         .mount("/", routes![index, sensors, updates, chart])

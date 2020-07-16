@@ -2,7 +2,7 @@ use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SensorsData {
     pub timestamp: u32,
     pub co2: Option<f64>,
@@ -32,6 +32,7 @@ impl Storage {
     }
 
     pub fn save_sensors(&self, data: SensorsData) {
+        println!("{:?}", data);
         self.connection.execute(
             "INSERT INTO sensors (
                 timestamp, 
