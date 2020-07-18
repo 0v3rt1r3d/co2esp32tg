@@ -7,6 +7,7 @@ extern crate plotters;
 
 use rocket::State;
 use serde_json;
+use reqwest;
 
 mod storage;
 
@@ -59,6 +60,7 @@ fn sensors(data: String, storage: State<StoragePtr>) ->&'static str {
 
 #[post("/updates", data = "<data>")]
 fn updates(data: String, storage: State<StoragePtr>) ->&'static str {
+    println!("{}", data);
     return "Did nothing";
 }
 
