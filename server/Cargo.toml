@@ -11,5 +11,5 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 plotters = "0.2.15"
 rocket = "0.4.5"
-reqwest = "0.10.6"
 rusqlite = "0.23.1"
+threadpool = "1.8.1"

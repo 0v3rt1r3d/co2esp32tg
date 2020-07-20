@@ -61,7 +61,7 @@ impl Storage {
                     None => String::from("NULL") // TODO: use named constant
                 },
             ],
-        );
+        ).expect("Sql request failed");
     }
 
     pub fn read(&self) -> Result<std::vec::Vec<SensorsData>> {

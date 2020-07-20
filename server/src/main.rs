@@ -7,9 +7,12 @@ extern crate plotters;
 
 use rocket::State;
 use serde_json;
-use reqwest;
+use std::sync::mpsc::channel;
 
 mod storage;
+
+const WORKERS_COUNT: usize = 4;
+const JOBS_COUNT: usize = 8;
 
 type StoragePtr = std::sync::Arc<std::sync::Mutex<storage::Storage>>;
 
@@ -59,7 +62,7 @@ fn sensors(data: String, storage: State<StoragePtr>) ->&'static str {
 }
 
 #[post("/updates", data = "<data>")]
-fn updates(data: String, storage: State<StoragePtr>) ->&'static str {
+fn updates(data: String) ->&'static str {
     println!("{}", data);
     return "Did nothing";
 }
@@ -160,17 +163,20 @@ fn chart(storage: State<StoragePtr>) -> String {
 }
 
 fn main() {
-    println!("{:?}", 1594941781u32 as f64);
-    println!(
-        "{}\n{}\n{}\n{}",
-        String::from("file:///Users/overtired/Desktop/pressure.png"),
-        String::from("file:///Users/overtired/Desktop/humidity.png"),
-        String::from("file:///Users/overtired/Desktop/co2.png"),
-        String::from("file:///Users/overtired/Desktop/temperature.png"),
-    );
     println!("http://0.0.0.0:443/chart");
+
+    let pool = threadpool::ThreadPool::new(WORKERS_COUNT);
+    let (sender, receiver) = channel();
+    for _ in 0..JOBS_COUNT {
+        let sender = sender.clone();
+        pool.execute(move|| {
+            sender.send(1).expect("channel will be there waiting for the pool");
+        });
+    }
+
     rocket::ignite()
         .mount("/", routes![index, sensors, updates, chart])
         .manage(make_async_storage())
+        .manage(std::sync::Arc::new(std::sync::Mutex::new(receiver)))
         .launch();
 }
