@@ -63,11 +63,22 @@ fn sensors(data: String, storage: State<StoragePtr>) ->&'static str {
 fn updates(body: String, storage: State<StoragePtr>, token: State<BotToken>) ->&'static str { // TODO: get rid of String, build release
     println!("{}", body);
     let update: serde_json::Value = serde_json::from_str(&body).unwrap();
+    let all_data = (*storage.lock().unwrap()).read().unwrap();
+    let last_sd = all_data.last().unwrap();
     let request = format!(
-        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=The last temperature = {} C",
+        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=Hi, {}! The last sensors data:\n\
+            temperature = {} C\n\
+            humidity = {}\n\
+            co2 = {}\n\
+            pressure = {}\n
+        ",
         token.token,
         update["message"]["chat"]["id"],
-        (*storage.lock().unwrap()).read().unwrap().last().unwrap().temperature.unwrap()
+        format!("{} {}", update["message"]["from"]["first_name"], update["message"]["from"]["last_name"]),
+        last_sd.temperature.unwrap(),
+        last_sd.humidity.unwrap(),
+        last_sd.co2.unwrap(),
+        last_sd.pressure.unwrap()
     );
     reqwest::blocking::get(&request).unwrap();
     return "Did nothing";
