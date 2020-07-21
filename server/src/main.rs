@@ -66,11 +66,11 @@ fn updates(body: String, storage: State<StoragePtr>, token: State<BotToken>) ->&
     let all_data = (*storage.lock().unwrap()).read().unwrap();
     let last_sd = all_data.last().unwrap();
     let request = format!(
-        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=Hi, {}! The last sensors data:\n\
-            temperature = {} C\n\
-            humidity = {}\n\
-            co2 = {}\n\
-            pressure = {}\n
+        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=Hi, {}! The last sensors data: \
+            temperature = {} C; \
+            humidity = {}; \
+            co2 = {}; \
+            pressure = {};
         ",
         token.token,
         update["message"]["chat"]["id"],
