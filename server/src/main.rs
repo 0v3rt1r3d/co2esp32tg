@@ -7,17 +7,14 @@ extern crate plotters;
 
 use rocket::State;
 use serde_json;
-use std::sync::mpsc::channel;
+use std::str;
 
 mod storage;
 
-const WORKERS_COUNT: usize = 4;
-const JOBS_COUNT: usize = 8;
-
 type StoragePtr = std::sync::Arc<std::sync::Mutex<storage::Storage>>;
 
-fn make_async_storage() -> StoragePtr {
-    std::sync::Arc::new(std::sync::Mutex::new(storage::Storage::new(String::from("sensors.db"))))
+fn make_async_storage(db_name: String) -> StoragePtr {
+    std::sync::Arc::new(std::sync::Mutex::new(storage::Storage::new(db_name)))
 }
 
 #[get("/")]
@@ -62,8 +59,15 @@ fn sensors(data: String, storage: State<StoragePtr>) ->&'static str {
 }
 
 #[post("/updates", data = "<data>")]
-fn updates(data: String) ->&'static str {
-    println!("{}", data);
+fn updates(data: rocket::Data) ->&'static str {
+    println!("{}", data.stream_to_file("upload.txt") .map(|n| n.to_string()).unwrap());
+
+
+
+    // let body = String::new();
+    // let ds : DataStream = data.open();
+    // ds.stream_to_string(&mut body).unwrap();
+    // println!("{}", body);
     return "Did nothing";
 }
 
@@ -164,19 +168,12 @@ fn chart(storage: State<StoragePtr>) -> String {
 
 fn main() {
     println!("http://0.0.0.0:443/chart");
-
-    let pool = threadpool::ThreadPool::new(WORKERS_COUNT);
-    let (sender, receiver) = channel();
-    for _ in 0..JOBS_COUNT {
-        let sender = sender.clone();
-        pool.execute(move|| {
-            sender.send(1).expect("channel will be there waiting for the pool");
-        });
-    }
+    // todo requvest
+    let res = reqwest::blocking::get("http://httpbin.org/get").unwrap();
+    println!("{}", res.text().unwrap());
 
     rocket::ignite()
         .mount("/", routes![index, sensors, updates, chart])
-        .manage(make_async_storage())
-        .manage(std::sync::Arc::new(std::sync::Mutex::new(receiver)))
+        .manage(make_async_storage(String::from("sensors.db")))
         .launch();
 }
