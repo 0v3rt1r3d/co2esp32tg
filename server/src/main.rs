@@ -7,6 +7,7 @@ extern crate plotters;
 
 use rocket::State;
 use serde_json;
+use std::env;
 use std::str;
 
 mod storage;
@@ -58,16 +59,17 @@ fn sensors(data: String, storage: State<StoragePtr>) ->&'static str {
     return "Ok";
 }
 
-#[post("/updates", data = "<data>")]
-fn updates(data: rocket::Data) ->&'static str {
-    println!("{}", data.stream_to_file("upload.txt") .map(|n| n.to_string()).unwrap());
-
-
-
-    // let body = String::new();
-    // let ds : DataStream = data.open();
-    // ds.stream_to_string(&mut body).unwrap();
-    // println!("{}", body);
+#[post("/updates", data = "<body>")]
+fn updates(body: String, storage: State<StoragePtr>, token: State<BotToken>) ->&'static str { // TODO: get rid of String, build release
+    println!("{}", body);
+    let update: serde_json::Value = serde_json::from_str(&body).unwrap();
+    let request = format!(
+        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=The last temperature = {} C",
+        token.token,
+        update["message"]["chat"]["id"],
+        (*storage.lock().unwrap()).read().unwrap().last().unwrap().temperature.unwrap()
+    );
+    reqwest::blocking::get(&request).unwrap();
     return "Did nothing";
 }
 
@@ -166,14 +168,17 @@ fn chart(storage: State<StoragePtr>) -> String {
     return String::from("Ok");
 }
 
+struct BotToken {
+    token: String
+}
+
 fn main() {
     println!("http://0.0.0.0:443/chart");
-    // todo requvest
-    let res = reqwest::blocking::get("http://httpbin.org/get").unwrap();
-    println!("{}", res.text().unwrap());
+    let token = env::var("BOT_TOKEN").expect("Bot token should be defined");
 
     rocket::ignite()
         .mount("/", routes![index, sensors, updates, chart])
         .manage(make_async_storage(String::from("sensors.db")))
+        .manage(BotToken{ token : token })
         .launch();
 }
