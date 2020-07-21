@@ -15,6 +15,21 @@ pub struct Storage {
     connection: Connection
 }
 
+// TODO: more correct?
+fn to_opt<T>(result: Result<T>) -> Option<T> {
+    match result {
+        Ok(value) => Some(value),
+        Err(_) => None
+    }
+}
+
+fn to_str<T: std::string::ToString>(option: Option<T>) -> String {
+    match option {
+        Some(value) => value.to_string(),
+        None => String::from("NULL")
+    }
+}
+
 impl Storage {
     pub fn new(database_url: String) -> Storage {
         let connection = Connection::open(database_url).expect("failed to connect");
@@ -44,22 +59,10 @@ impl Storage {
             VALUES (?1, ?2, ?3, ?4, ?5)",
             params![
                 data.timestamp.to_string(),
-                match data.co2 {
-                    Some(value) => value.to_string(),
-                    None => String::from("NULL")
-                },
-                match data.humidity {
-                    Some(value) =>value.to_string(),
-                    None => String::from("NULL")
-                },
-                match data.pressure {
-                    Some(value) => value.to_string(),
-                    None => String::from("NULL")
-                },
-                match data.temperature { // TODO: wrap a function
-                    Some(value) => value.to_string(),
-                    None => String::from("NULL") // TODO: use named constant
-                },
+                to_str(data.co2),
+                to_str(data.humidity),
+                to_str(data.pressure),
+                to_str(data.temperature)
             ],
         ).expect("Sql request failed");
     }
@@ -78,22 +81,10 @@ impl Storage {
         let iter = request.query_map(params![], |row| {
             Ok(SensorsData {
                 timestamp: row.get::<usize, u32>(0).unwrap(),
-                co2: match row.get::<usize, f64>(1) {
-                    Ok(value) => Some(value),
-                    Err(_) => None
-                },
-                humidity: match row.get::<usize, f64>(2) {
-                    Ok(value) => Some(value),
-                    Err(_) => None
-                },
-                pressure: match row.get::<usize, f64>(3) {
-                    Ok(value) => Some(value),
-                    Err(_) => None
-                },
-                temperature: match row.get::<usize, f64>(4) {
-                    Ok(value) => Some(value),
-                    Err(_) => None
-                }
+                co2: to_opt(row.get::<usize, f64>(1)),
+                humidity: to_opt(row.get::<usize, f64>(2)),
+                pressure: to_opt(row.get::<usize, f64>(3)),
+                temperature: to_opt(row.get::<usize, f64>(4))
             })
         }).expect("No");
         Ok(iter.map(|data| {data.unwrap()}).collect::<std::vec::Vec<SensorsData>>())
