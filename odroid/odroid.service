@@ -1,0 +1,17 @@
+[Unit]
+Description=Sensors data pusher
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=root
+ExecStart=/usr/local/lib/odroid/main.py
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=odroid
+
+[Install]
+WantedBy=multi-user.target

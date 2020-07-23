@@ -11,7 +11,9 @@ import sys
 import syslog
 import time
 
-URL = "http://192.168.1.66:443/sensors"
+urls = [
+    "http://192.168.1.76:443/sensors",
+]
 
 interrupted = False
 
@@ -34,22 +36,27 @@ def get_values():
         "temperature" : temperature
     }
 
+def send_or_log_error(url, data):
+    try:
+        response = requests.post(url = url, data = data)
+        print(
+            "Sent sensors data, http code = {}; body = {}".format(
+                response.status_code,
+                response.text
+            ),
+            file=sys.stderr
+        )
+    except Exception:
+        message = "Failed to send data to {}".format(url)
+        print(message, file=sys.stderr)
+
+
+# Load aml_i2c module before
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, sigint_handler)
-    sleep_time_s = 1
+    sleep_time_s = 5 # TODO: set time to 60 * 5
     while not interrupted:
         data = json.dumps(get_values())
-        try:
-            response = requests.post(url = URL, data = data)
-            print(
-                "Sent sensors data, http code = {}; body = {}".format(
-                    response.status_code,
-                    response.text
-                ),
-                file=sys.stderr
-            )
-        except Exception:
-            syslog.syslog(syslog.LOG_WARNING, "Failed to send data")
-            print("Failed to send data to {}".format(URL), file=sys.stderr)
-
+        for url in urls:
+            send_or_log_error(url, data)
         time.sleep(sleep_time_s)
