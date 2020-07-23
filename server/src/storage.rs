@@ -2,7 +2,7 @@ use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
 
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SensorsData {
     pub timestamp: u32,
     pub co2: Option<f64>,
@@ -23,7 +23,7 @@ fn to_opt<T>(result: Result<T>) -> Option<T> {
     }
 }
 
-fn to_str<T: std::string::ToString>(option: Option<T>) -> String {
+pub fn to_str<T: std::string::ToString>(option: Option<T>) -> String {
     match option {
         Some(value) => value.to_string(),
         None => String::from("NULL")

@@ -13,9 +13,15 @@ use std::str;
 mod storage;
 
 type StoragePtr = std::sync::Arc<std::sync::Mutex<storage::Storage>>;
-
 fn make_async_storage(db_name: String) -> StoragePtr {
     std::sync::Arc::new(std::sync::Mutex::new(storage::Storage::new(db_name)))
+}
+
+// Temporary replacements till charts are not drawn
+type SensorsDataPtr = std::sync::Arc<std::sync::Mutex<Option::<storage::SensorsData>>>;
+
+fn make_async_sensors_data() -> SensorsDataPtr {
+    std::sync::Arc::new(std::sync::Mutex::new(None))
 }
 
 #[get("/")]
@@ -29,22 +35,10 @@ fn index(storage: State<StoragePtr>) -> String {
                 format!(
                     "{}, {}, {}, {}, {}",
                     data.timestamp,
-                    match data.co2 {
-                        Some(value) => value.to_string(),
-                        None => String::from("NULL")
-                    },
-                    match data.humidity {
-                        Some(value) => value.to_string(),
-                        None => String::from("NULL")
-                    },
-                    match data.pressure {
-                        Some(value) => value.to_string(),
-                        None => String::from("NULL")
-                    },
-                    match data.temperature {
-                        Some(value) => value.to_string(),
-                        None => String::from("NULL")
-                    },
+                    storage::to_str(data.co2),
+                    storage::to_str(data.humidity),
+                    storage::to_str(data.pressure),
+                    storage::to_str(data.temperature),
                 )
             })
             .collect::<std::vec::Vec<String>>()
@@ -53,18 +47,30 @@ fn index(storage: State<StoragePtr>) -> String {
 }
 
 #[post("/sensors", data = "<data>")]
-fn sensors(data: String, storage: State<StoragePtr>) ->&'static str {
+fn sensors(data: String, storage: State<SensorsDataPtr>) ->&'static str {
     let data: storage::SensorsData = serde_json::from_str(&data).unwrap();
-    (*storage.lock().unwrap()).save_sensors(data);
+    // (*storage.lock().unwrap()).save_sensors(data);
+
+    // Temprorary
+    let mut locked = storage.lock().unwrap();
+    locked.replace(data);
+
     return "Ok";
 }
 
 #[post("/updates", data = "<body>")]
-fn updates(body: String, storage: State<StoragePtr>, token: State<BotToken>) ->&'static str { // TODO: get rid of String, build release
+fn updates(body: String, storage: State<SensorsDataPtr>, token: State<BotToken>) ->&'static str { // TODO: get rid of String, build release
     println!("{}", body);
     let update: serde_json::Value = serde_json::from_str(&body).unwrap();
-    let all_data = (*storage.lock().unwrap()).read().unwrap();
-    let last_sd = all_data.last().unwrap();
+    // let all_data = (*storage.lock().unwrap()).read().unwrap();
+    // let last_sd = all_data.last().unwrap();
+
+    let lock_result = storage.lock();
+    let unwrapped = lock_result.unwrap();
+    let opt = (*unwrapped).as_ref();
+    let cloned = opt.cloned();
+    let last_sd = cloned.unwrap();
+
     let request = format!(
         "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=Hi, {}! The last sensors data: \
             temperature = {} C; \
@@ -195,7 +201,8 @@ fn main() {
 
     rocket::ignite()
         .mount("/", routes![index, sensors, updates, chart])
-        .manage(make_async_storage(String::from("sensors.db")))
+        // .manage(make_async_storage(String::from("sensors.db")))
+        .manage(make_async_sensors_data())
         .manage(BotToken{ token : token })
         .launch();
 }
