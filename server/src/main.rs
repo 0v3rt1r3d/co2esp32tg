@@ -5,6 +5,7 @@
 extern crate dotenv;
 extern crate plotters;
 
+use chrono::NaiveDateTime;
 use rocket::State;
 use serde_json;
 use std::env;
@@ -71,15 +72,19 @@ fn updates(body: String, storage: State<SensorsDataPtr>, token: State<BotToken>)
     let cloned = opt.cloned();
     let last_sd = cloned.unwrap();
 
+    let formatted_date = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0);
+
     let request = format!(
-        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=Hi, {}! The last sensors data: \
-            temperature = {} C; \
-            humidity = {}; \
-            co2 = {}; \
+        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=Hi, {}! The last sensors data:\n\
+            timestamp = {}; \n\
+            temperature = {} C; \n\
+            humidity = {}; \n\
+            co2 = {}; \n\
             pressure = {};
         ",
         token.token,
         update["message"]["chat"]["id"],
+        formatted_date,
         format!("{} {}", update["message"]["from"]["first_name"], update["message"]["from"]["last_name"]),
         last_sd.temperature.unwrap(),
         last_sd.humidity.unwrap(),
