@@ -59,39 +59,85 @@ fn sensors(data: String, storage: State<SensorsDataPtr>) ->&'static str {
     return "Ok";
 }
 
+fn send_message(
+    token: &str,
+    chat_id: &str,
+    text: &str
+) {
+    let request = format!(
+        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}&parse_mode=MarkdownV2",
+        token,
+        chat_id,
+        text,
+    );
+    reqwest::blocking::get(&request).unwrap();
+    // TODO: return result of sendong
+}
+
 #[post("/updates", data = "<body>")]
-fn updates(body: String, storage: State<SensorsDataPtr>, token: State<BotToken>) ->&'static str { // TODO: get rid of String, build release
+fn updates(
+    body: String,
+    storage: State<SensorsDataPtr>,
+    token: State<BotToken>
+) ->&'static str { // TODO: get rid of String, build release
     println!("{}", body);
     let update: serde_json::Value = serde_json::from_str(&body).unwrap();
     // let all_data = (*storage.lock().unwrap()).read().unwrap();
     // let last_sd = all_data.last().unwrap();
-
-    let lock_result = storage.lock();
-    let unwrapped = lock_result.unwrap();
-    let opt = (*unwrapped).as_ref();
-    let cloned = opt.cloned();
-    let last_sd = cloned.unwrap();
-
-    let formatted_date = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0);
-
-    let request = format!(
-        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text=Hi, {}! The last sensors data:\n\
-            timestamp = {}; \n\
-            temperature = {} C; \n\
-            humidity = {}; \n\
-            co2 = {}; \n\
-            pressure = {};
-        ",
-        token.token,
-        update["message"]["chat"]["id"],
-        formatted_date,
-        format!("{} {}", update["message"]["from"]["first_name"], update["message"]["from"]["last_name"]),
-        last_sd.temperature.unwrap(),
-        last_sd.humidity.unwrap(),
-        last_sd.co2.unwrap(),
-        last_sd.pressure.unwrap()
+    send_message(
+        &token.token,
+        &update["message"]["chat"]["id"].to_string(),
+        "Should be sent before"
     );
-    reqwest::blocking::get(&request).unwrap();
+    
+    if update["message"]["text"] == "/sensors" {
+        let lock_result = storage.lock();
+        let mut locked_value = match storage.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner()
+        };
+        let opt = locked_value.as_ref();
+        let cloned = opt.cloned();
+        let last_sd = cloned.unwrap();
+        let formatted_date = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0);
+        
+        send_message(
+            &token.token,
+            &update["message"]["chat"]["id"].to_string(),
+            &format!(
+                "The last sensors data:
+                    timestamp = {};
+                    temperature = {} C;
+                    humidity = {};
+                    co2 = {};
+                    pressure = {};
+                ",
+                formatted_date,
+                last_sd.temperature.unwrap(),
+                last_sd.humidity.unwrap(),
+                last_sd.co2.unwrap(),
+                last_sd.pressure.unwrap()
+            )
+        );
+    } else if update["message"]["text"] == "/chat_id" {
+        send_message(
+            &token.token,
+            &update["message"]["chat"]["id"].to_string(),
+            &format!("Your `chat_id` is: `{}`", update["message"]["chat"]["id"])
+        );
+    } else {
+        send_message(
+            &token.token,
+            &update["message"]["chat"]["id"].to_string(),
+            "Unknown command"
+        );
+    }
+    send_message(
+        &token.token,
+        &update["message"]["chat"]["id"].to_string(),
+        "Should be sent after"
+    );
+
     return "Did nothing";
 }
 
