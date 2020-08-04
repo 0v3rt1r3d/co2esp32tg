@@ -125,6 +125,20 @@ fn updates(
         let cloned = opt.cloned();
         let last_sd = cloned.unwrap();
         let formatted_date = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0);
+
+        send_message(
+            &token.token,
+            &update["message"]["chat"]["id"].to_string(),
+            &format!("Hello {}", formatted_date)
+        );
+
+        let m = "asdf";
+
+        send_message(
+            &token.token,
+            &update["message"]["chat"]["id"].to_string(),
+            &m
+        );
         
         send_message(
             &token.token,
