@@ -25,26 +25,46 @@ fn make_async_sensors_data() -> SensorsDataPtr {
     std::sync::Arc::new(std::sync::Mutex::new(None))
 }
 
+// #[get("/")]
+// fn index(storage: State<StoragePtr>) -> String {
+//     return format!(
+//         "Sensors:\n{}",
+//         (*storage.lock().unwrap())
+//             .read().unwrap()
+//             .iter()
+//             .map(|data| {
+//                 format!(
+//                     "{}, {}, {}, {}, {}",
+//                     data.timestamp,
+//                     storage::to_str(data.co2),
+//                     storage::to_str(data.humidity),
+//                     storage::to_str(data.pressure),
+//                     storage::to_str(data.temperature),
+//                 )
+//             })
+//             .collect::<std::vec::Vec<String>>()
+//             .join("\n")
+//         );
+// }
+
 #[get("/")]
-fn index(storage: State<StoragePtr>) -> String {
+fn index(storage: State<SensorsDataPtr>) -> String {
+    let mut locked_value = match storage.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner()
+    };
+    let opt = locked_value.as_ref();
+    let cloned = opt.cloned();
+    let data = cloned.unwrap();
+
     return format!(
-        "Sensors:\n{}",
-        (*storage.lock().unwrap())
-            .read().unwrap()
-            .iter()
-            .map(|data| {
-                format!(
-                    "{}, {}, {}, {}, {}",
-                    data.timestamp,
-                    storage::to_str(data.co2),
-                    storage::to_str(data.humidity),
-                    storage::to_str(data.pressure),
-                    storage::to_str(data.temperature),
-                )
-            })
-            .collect::<std::vec::Vec<String>>()
-            .join("\n")
-        );
+        "Sensors: {}, {}, {}, {}, {}",
+        data.timestamp,
+        storage::to_str(data.co2),
+        storage::to_str(data.humidity),
+        storage::to_str(data.pressure),
+        storage::to_str(data.temperature),
+    );
 }
 
 #[post("/sensors", data = "<data>")]
@@ -91,8 +111,7 @@ fn updates(
     );
     
     if update["message"]["text"] == "/sensors" {
-        let lock_result = storage.lock();
-        let mut locked_value = match storage.lock() {
+        let locked_value = match storage.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner()
         };
