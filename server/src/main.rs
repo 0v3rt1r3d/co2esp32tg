@@ -49,7 +49,7 @@ fn make_async_sensors_data() -> SensorsDataPtr {
 
 #[get("/")]
 fn index(storage: State<SensorsDataPtr>) -> String {
-    let mut locked_value = match storage.lock() {
+    let locked_value = match storage.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner()
     };
@@ -84,14 +84,20 @@ fn send_message(
     chat_id: &str,
     text: &str
 ) {
-    let request = format!(
-        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}&parse_mode=MarkdownV2",
-        token,
-        chat_id,
-        text,
-    );
-    reqwest::blocking::get(&request).unwrap();
-    // TODO: return result of sendong
+    let client = reqwest::blocking::Client::new();
+    client.post(&format!("https://api.telegram.org/bot{}/sendMessage", token))
+        .body(format!(
+            "{{ \
+                \"chat_id\":{}, \
+                \"text\":\"{}\", \
+                \"parse_mode\":\"MarkdownV2\" \
+            }}",
+            chat_id,
+            text,
+        ))
+        .header("Content-Type", "application/json")
+        .send()
+        .unwrap();
 }
 
 #[post("/updates", data = "<body>")]
