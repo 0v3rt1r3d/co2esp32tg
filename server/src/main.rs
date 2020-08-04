@@ -85,7 +85,7 @@ fn send_message(
     text: &str
 ) {
     let client = reqwest::blocking::Client::new();
-    client.post(&format!("https://api.telegram.org/bot{}/sendMessage", token))
+    let result = client.post(&format!("https://api.telegram.org/bot{}/sendMessage", token))
         .body(format!(
             "{{ \
                 \"chat_id\":{}, \
@@ -98,6 +98,8 @@ fn send_message(
         .header("Content-Type", "application/json")
         .send()
         .unwrap();
+
+    println!("Result: {}, {}", result.status(), result.text().unwrap());
 }
 
 #[post("/updates", data = "<body>")]
@@ -123,13 +125,13 @@ fn updates(
         send_message(
             &token.token,
             &update["message"]["chat"]["id"].to_string(),
-            &format!(
-                "The last sensors data:
-                    timestamp = {};
-                    temperature = {} C;
-                    humidity = {};
-                    co2 = {};
-                    pressure = {};
+            &format!("
+The last sensors data:
+\\\\- timestamp: {};
+\\\\- temperature: {} C;
+\\\\- humidity: {};
+\\\\- co2: {};
+\\\\- pressure: {};
                 ",
                 formatted_date,
                 last_sd.temperature.unwrap(),
