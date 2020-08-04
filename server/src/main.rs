@@ -88,9 +88,9 @@ fn send_message(
     let result = client.post(&format!("https://api.telegram.org/bot{}/sendMessage", token))
         .body(format!(
             "{{ \
+                \"parse_mode\":\"MarkdownV2\", \
                 \"chat_id\":{}, \
-                \"text\":\"{}\", \
-                \"parse_mode\":\"MarkdownV2\" \
+                \"text\":\"{}\" \
             }}",
             chat_id,
             text,
@@ -120,32 +120,17 @@ fn updates(
         let opt = locked_value.as_ref();
         let cloned = opt.cloned();
         let last_sd = cloned.unwrap();
-        let formatted_date = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0);
+        let formatted_date = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0).to_string();
 
-        send_message(
-            &token.token,
-            &update["message"]["chat"]["id"].to_string(),
-            &format!("Hello {}", formatted_date)
-        );
-
-        let m = "asdf";
-
-        send_message(
-            &token.token,
-            &update["message"]["chat"]["id"].to_string(),
-            &m
-        );
-        
         send_message(
             &token.token,
             &update["message"]["chat"]["id"].to_string(),
             &format!("
-The last sensors data:
-\\\\- timestamp: {};
-\\\\- temperature: {} C;
-\\\\- humidity: {};
-\\\\- co2: {};
-\\\\- pressure: {};
+*timestamp*: {} UTC
+*temperature*: {:.1} C
+*humidity*: {:.2}%
+*co2*: {:.2} ppm
+*pressure*: {:.2} ???
                 ",
                 formatted_date,
                 last_sd.temperature.unwrap(),
@@ -153,6 +138,8 @@ The last sensors data:
                 last_sd.co2.unwrap(),
                 last_sd.pressure.unwrap()
             )
+                .replace("-", "\\\\-")
+                .replace(".", "\\\\.")
         );
     } else if update["message"]["text"] == "/chat_id" {
         send_message(
@@ -167,12 +154,6 @@ The last sensors data:
             "Unknown command"
         );
     }
-    send_message(
-        &token.token,
-        &update["message"]["chat"]["id"].to_string(),
-        "Processed user command"
-    );
-
     return "Did nothing";
 }
 
