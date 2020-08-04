@@ -110,12 +110,6 @@ fn updates(
     let update: serde_json::Value = serde_json::from_str(&body).unwrap();
     // let all_data = (*storage.lock().unwrap()).read().unwrap();
     // let last_sd = all_data.last().unwrap();
-    send_message(
-        &token.token,
-        &update["message"]["chat"]["id"].to_string(),
-        "Should be sent before"
-    );
-    
     if update["message"]["text"] == "/sensors" {
         let locked_value = match storage.lock() {
             Ok(guard) => guard,
@@ -160,7 +154,7 @@ fn updates(
     send_message(
         &token.token,
         &update["message"]["chat"]["id"].to_string(),
-        "Should be sent after"
+        "Processed user command"
     );
 
     return "Did nothing";
