@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Chat {
-    pub id: String
+    pub id: u64
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -40,12 +40,15 @@ pub fn handle_sensors(
     };
     let opt = locked_value.as_ref();
     let cloned = opt.cloned();
-    let last_sd = cloned.unwrap();
+    let last_sd = match cloned {
+        Some(s) => s,
+        None => return "no"
+    };
     let formatted_date = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0).to_string();
 
     tgapi::send_message(
         &token,
-        &update.message.chat.id,
+        &update.message.chat.id.to_string(),
         &format!("
 *timestamp*: {} UTC
 *temperature*: {:.1} C
@@ -125,7 +128,7 @@ pub fn handle_sensors_hist(
 pub fn handle_unknown_command(token: &String, update: &tgapi::Update) -> &'static str {
     tgapi::send_message(
         &token,
-        &update.message.chat.id,
+        &update.message.chat.id.to_string(),
         "Unknown command"
     );
     return "Ok";
@@ -134,7 +137,7 @@ pub fn handle_unknown_command(token: &String, update: &tgapi::Update) -> &'stati
 pub fn handle_chat_id(token: &String, update: &tgapi::Update) -> &'static str {
     tgapi::send_message(
         token,
-        &update.message.chat.id,
+        &update.message.chat.id.to_string(),
         &format!("Your `chat_id` is: `{}`", update.message.chat.id)
     );
     return "Ok";
