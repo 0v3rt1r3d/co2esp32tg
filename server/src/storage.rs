@@ -1,5 +1,6 @@
 use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
+use std::fs;
 
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -12,7 +13,8 @@ pub struct SensorsData {
 }
 
 pub struct Storage {
-    connection: Connection
+    connection: Connection,
+    db_file: String
 }
 
 // TODO: more correct?
@@ -32,7 +34,7 @@ pub fn to_str<T: std::string::ToString>(option: Option<T>) -> String {
 
 impl Storage {
     pub fn new(database_url: String) -> Storage {
-        let connection = Connection::open(database_url).expect("failed to connect");
+        let connection = Connection::open(&database_url).expect("failed to connect");
         connection.execute(
             "CREATE TABLE IF NOT EXISTS sensors (
                 timestamp INTEGER PRIMARY KEY,
@@ -43,10 +45,10 @@ impl Storage {
             )",
             params![],
         ).expect("WTF!?");
-        Storage { connection }
+        Storage { connection, db_file: database_url }
     }
 
-    pub fn save_sensors(&self, data: SensorsData) {
+    pub fn save_sensors(&self, data: &SensorsData) {
         println!("{:?}", data);
         self.connection.execute(
             "INSERT INTO sensors (
@@ -88,5 +90,9 @@ impl Storage {
             })
         }).expect("No");
         Ok(iter.map(|data| {data.unwrap()}).collect::<std::vec::Vec<SensorsData>>())
+    }
+
+    pub fn db_size_mb(&self) -> f64 {
+        return fs::metadata(&self.db_file).unwrap().len() as f64 / 1024f64 / 1024f64;
     }
 }

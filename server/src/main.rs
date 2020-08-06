@@ -20,7 +20,6 @@ fn make_async_storage(db_name: String) -> StoragePtr {
 
 // Temporary replacements till charts are not drawn
 type SensorsDataPtr = std::sync::Arc<std::sync::Mutex<Option::<storage::SensorsData>>>;
-
 fn make_async_sensors_data() -> SensorsDataPtr {
     std::sync::Arc::new(std::sync::Mutex::new(None))
 }
@@ -48,8 +47,11 @@ fn make_async_sensors_data() -> SensorsDataPtr {
 // }
 
 #[get("/")]
-fn index(storage: State<SensorsDataPtr>) -> String {
-    let locked_value = match storage.lock() {
+fn index(
+    last_sd: State<SensorsDataPtr>,
+    storage: State<StoragePtr>
+) -> String {
+    let locked_value = match last_sd.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner()
     };
@@ -58,22 +60,27 @@ fn index(storage: State<SensorsDataPtr>) -> String {
     let data = cloned.unwrap();
 
     return format!(
-        "Sensors: {}, {}, {}, {}, {}",
+        "Sensors: {}, {}, {}, {}, {}; DB size: {:.2} Mb",
         data.timestamp,
         storage::to_str(data.co2),
         storage::to_str(data.humidity),
         storage::to_str(data.pressure),
         storage::to_str(data.temperature),
+        (*storage.lock().unwrap()).db_size_mb()
     );
 }
 
 #[post("/sensors", data = "<data>")]
-fn sensors(data: String, storage: State<SensorsDataPtr>) ->&'static str {
+fn sensors(
+    data: String,
+    last_sd: State<SensorsDataPtr>,
+    storage: State<StoragePtr>
+) ->&'static str {
     let data: storage::SensorsData = serde_json::from_str(&data).unwrap();
-    // (*storage.lock().unwrap()).save_sensors(data);
+    (*storage.lock().unwrap()).save_sensors(&data);
 
     // Temprorary
-    let mut locked = storage.lock().unwrap();
+    let mut locked = last_sd.lock().unwrap();
     locked.replace(data);
 
     return "Ok";
@@ -105,7 +112,8 @@ fn send_message(
 #[post("/updates", data = "<body>")]
 fn updates(
     body: String,
-    storage: State<SensorsDataPtr>,
+    last_sd: State<SensorsDataPtr>,
+    storage: State<StoragePtr>,
     token: State<BotToken>
 ) ->&'static str { // TODO: get rid of String, build release
     println!("{}", body);
@@ -113,7 +121,7 @@ fn updates(
     // let all_data = (*storage.lock().unwrap()).read().unwrap();
     // let last_sd = all_data.last().unwrap();
     if update["message"]["text"] == "/sensors" {
-        let locked_value = match storage.lock() {
+        let locked_value = match last_sd.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner()
         };
@@ -131,12 +139,14 @@ fn updates(
 *humidity*: {:.2}%
 *co2*: {:.2} ppm
 *pressure*: {:.2} ???
+*database size*: {:.2} Mb
                 ",
                 formatted_date,
                 last_sd.temperature.unwrap(),
                 last_sd.humidity.unwrap(),
                 last_sd.co2.unwrap(),
-                last_sd.pressure.unwrap()
+                last_sd.pressure.unwrap(),
+                (*storage.lock().unwrap()).db_size_mb()
             )
                 .replace("-", "\\\\-")
                 .replace(".", "\\\\.")
@@ -268,7 +278,7 @@ fn main() {
 
     rocket::ignite()
         .mount("/", routes![index, sensors, updates, chart])
-        // .manage(make_async_storage(String::from("sensors.db")))
+        .manage(make_async_storage(String::from("sensors.db")))
         .manage(make_async_sensors_data())
         .manage(BotToken{ token : token })
         .launch();
