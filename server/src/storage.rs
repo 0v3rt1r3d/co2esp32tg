@@ -17,7 +17,7 @@ pub struct Storage {
     db_file: String
 }
 
-// TODO: more correct?
+// TODO: is there a builtin way?
 fn to_opt<T>(result: Result<T>) -> Option<T> {
     match result {
         Ok(value) => Some(value),
@@ -30,6 +30,11 @@ pub fn to_str<T: std::string::ToString>(option: Option<T>) -> String {
         Some(value) => value.to_string(),
         None => String::from("NULL")
     }
+}
+
+pub type StoragePtr = std::sync::Arc<std::sync::Mutex<Storage>>;
+pub fn make_async_storage(db_name: String) -> StoragePtr {
+    std::sync::Arc::new(std::sync::Mutex::new(Storage::new(db_name)))
 }
 
 impl Storage {
