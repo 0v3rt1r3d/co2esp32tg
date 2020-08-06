@@ -75,8 +75,8 @@ pub fn handle_sensors(
 pub fn handle_sensors_hist(
     // token: &String,
     // update: &tgapi::Update,
-    storage: storage::StoragePtr
-) -> &'static str {
+    storage: &storage::StoragePtr
+) -> String {
     let values = (*storage.lock().unwrap()).read().unwrap();
 
     println!("Values: {:?}", values.iter().map(|it| {it.timestamp as f32}).collect::<std::vec::Vec<f32>>());
@@ -111,7 +111,7 @@ pub fn handle_sensors_hist(
             }
         }).collect()
     );
-    chart::make_chart_encoded_base64(
+    return chart::make_chart_encoded_base64(
         String::from("temperature"),
         values.iter().map(|it| {it.timestamp}).collect::<std::vec::Vec<u32>>(),
         values.iter().map(|it| {
@@ -121,8 +121,6 @@ pub fn handle_sensors_hist(
             }
         }).collect()
     );
-
-    return "Not supported";
 }
 
 pub fn handle_unknown_command(token: &String, update: &tgapi::Update) -> &'static str {

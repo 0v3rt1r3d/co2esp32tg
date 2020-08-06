@@ -63,8 +63,8 @@ fn updates(
 }
 
 #[get("/chart")] // TODO: for debug, remove later
-fn chart() -> &'static str {
-    return "Not supported";
+fn chart(storage: State<storage::StoragePtr>) -> String {
+    return handlers::handle_sensors_hist(storage.inner());
 }
 
 fn main() {

@@ -1,8 +1,10 @@
+use base64;
+
 pub fn make_chart_encoded_base64(
     title: String,
     x: std::vec::Vec<u32>,
     y: std::vec::Vec<f64>
-) -> std::vec::Vec<u8> {
+) -> String {
     use plotters::prelude::*;
     let first = x.first().unwrap();
     let x : std::vec::Vec<f32> = x.iter().map(|it| (it - first) as f32).collect();
@@ -38,13 +40,10 @@ pub fn make_chart_encoded_base64(
             )).expect("No3")
             .label("real graph");
     }
-
-    // let img_buffer = image::ImageBuffer::<image::Rgb<u8>, std::vec::Vec<u8>>::from_raw(width, height, &buffer).unwrap();
     let img = image::RgbImage::from_raw(width, height, buffer).unwrap();
     let img = image::DynamicImage::ImageRgb8(img);
-    let mut output = vec![0];
-    img.write_to(&mut output, image::ImageFormat::Png).unwrap();
+    let mut output = vec![];
+    img.write_to(&mut output, image::ImageOutputFormat::Png).unwrap();
 
-    // return base64::encode(output);
-    return output;
+    return base64::encode(output);
 }
