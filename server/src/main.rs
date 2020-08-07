@@ -1,4 +1,3 @@
-
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use] extern crate rocket;
@@ -22,12 +21,6 @@ struct BotToken {
     token: String
 }
 
-// Temporary replacements till charts are not drawn
-type SensorsDataPtr = std::sync::Arc<std::sync::Mutex<Option::<storage::SensorsData>>>;
-fn make_async_sensors_data() -> SensorsDataPtr {
-    std::sync::Arc::new(std::sync::Mutex::new(None))
-}
-
 #[get("/")]
 fn index(storage: State<storage::StoragePtr>) -> String {
     return handlers::handle_index(&*storage);
@@ -36,27 +29,21 @@ fn index(storage: State<storage::StoragePtr>) -> String {
 #[post("/sensors", data = "<data>", format="json")]
 fn sensors(
     data: Json<storage::SensorsData>,
-    last_sd: State<SensorsDataPtr>,
     storage: State<storage::StoragePtr>
-) ->&'static str {
-    (*storage.lock().unwrap()).save_sensors(&data);
-
-    // Temprorary
-    let mut locked = last_sd.lock().unwrap();
-    locked.replace(data.clone());
-
+) -> &'static str {
+    let locked = storage.lock().unwrap();
+    locked.save_sensors(&data);
     return "Ok";
 }
 
 #[post("/updates", data = "<update>", format="json")]
 fn updates(
     update: Json<tgapi::Update>,
-    last_sd: State<SensorsDataPtr>,
     storage: State<storage::StoragePtr>,
     token: State<BotToken>
-) ->&'static str {
+) -> &'static str {
     match update.message.text.as_str() {
-        "/sensors" => handlers::handle_sensors(&token.token, &update, last_sd.inner(), storage.inner()),
+        "/sensors" => handlers::handle_sensors(&token.token, &update, storage.inner()),
         "/sensors_hist" => handlers::handle_sensors_hist(&token.token, &update, storage.inner()),
         "/chat_id" => handlers::handle_chat_id(&token.token, &update),
         _ => handlers::handle_unknown_command(&token.token, &update),
@@ -69,6 +56,9 @@ fn debug(
     token: State<BotToken>,
     storage: State<storage::StoragePtr>
 ) -> &'static str {
+    {
+        println!("{:?}", (storage.lock().unwrap()).read_last().unwrap());
+    }
     return handlers::handle_sensors_hist(&token.token, &tgapi::Update {message: tgapi::Message{text: String::from(""), chat: tgapi::Chat{id: 0u64}}}, &storage);
 }
 
@@ -79,7 +69,6 @@ fn main() {
     rocket::ignite()
         .mount("/", routes![index, sensors, updates, debug])
         .manage(storage::make_async_storage(String::from("sensors.db")))
-        .manage(make_async_sensors_data())
         .manage(BotToken{ token })
         .launch();
 }

@@ -31,19 +31,9 @@ pub fn handle_index(storage: &storage::StoragePtr) -> String {
 pub fn handle_sensors(
     token: &String,
     update: &tgapi::Update,
-    last_sd: &std::sync::Arc<std::sync::Mutex<Option::<storage::SensorsData>>>,
     storage: &storage::StoragePtr
 ) -> &'static str {
-    let locked_value = match last_sd.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner()
-    };
-    let opt = locked_value.as_ref();
-    let cloned = opt.cloned();
-    let last_sd = match cloned {
-        Some(s) => s,
-        None => return "no"
-    };
+    let last_sd = (*storage.lock().unwrap()).read_last().unwrap();
     let formatted_date = utils::parse_time(last_sd.timestamp.into()).to_string();
 
     tgapi::send_message(
@@ -54,7 +44,7 @@ pub fn handle_sensors(
 *temperature*: {:.1} C
 *humidity*: {:.2}%
 *co2*: {:.2} ppm
-*pressure*: {:.2} ???
+*pressure*: {:.2} hPa
 *database size*: {:.2} Mb
             ",
                  formatted_date,
@@ -83,7 +73,6 @@ fn send_chart(
     tgapi::send_image(token, chat_id, filename);
 }
 
-// TODO: make it worked
 pub fn handle_sensors_hist(
     token: &String,
     update: &tgapi::Update,
@@ -94,9 +83,9 @@ pub fn handle_sensors_hist(
     let chat_id = update.message.chat.id.to_string().clone();
 
     send_chart(
-        &token,
+        token,
         &chat_id,
-        "Pressure, ???",
+        "Pressure, hPa",
         "pressure.png",
         &times,
         &values.iter().map(|it| {
@@ -136,9 +125,9 @@ pub fn handle_sensors_hist(
     );
 
     send_chart(
-        &token,
+        token,
         &chat_id,
-        "temperature, C",
+        "Temperature, C",
         "temperature.png",
         &times,
         &values.iter().map(|it| {
@@ -154,7 +143,7 @@ pub fn handle_sensors_hist(
 
 pub fn handle_unknown_command(token: &String, update: &tgapi::Update) -> &'static str {
     tgapi::send_message(
-        &token,
+        token,
         &update.message.chat.id.to_string(),
         "Unknown command"
     );

@@ -93,8 +93,34 @@ impl Storage {
                 pressure: to_opt(row.get::<usize, f64>(3)),
                 temperature: to_opt(row.get::<usize, f64>(4))
             })
-        }).expect("No");
+        }).unwrap();
         Ok(iter.map(|data| {data.unwrap()}).collect::<std::vec::Vec<SensorsData>>())
+    }
+
+    pub fn read_last(&self) -> Result<SensorsData> {
+        let mut request = self.connection
+            .prepare("
+            SELECT
+                timestamp,
+                co2,
+                humidity,
+                pressure,
+                temperature
+            FROM sensors
+            WHERE timestamp = (SELECT MAX(timestamp) FROM sensors ORDER BY timestamp DESC)
+            ")
+            .unwrap();
+        let iter = request.query_map(params![], |row| {
+            Ok(SensorsData {
+                timestamp: row.get::<usize, i64>(0).unwrap(),
+                co2: to_opt(row.get::<usize, f64>(1)),
+                humidity: to_opt(row.get::<usize, f64>(2)),
+                pressure: to_opt(row.get::<usize, f64>(3)),
+                temperature: to_opt(row.get::<usize, f64>(4))
+            })
+        })
+            .unwrap();
+        Ok(iter.map(|data| {data.unwrap()}).collect::<std::vec::Vec<SensorsData>>()[0].clone())
     }
 
     pub fn db_size_mb(&self) -> f64 {
