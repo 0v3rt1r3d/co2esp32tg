@@ -56,6 +56,7 @@ pub fn handle_sensors(
         )
             .replace("-", "\\\\-")
             .replace(".", "\\\\.")
+            .replace("+", "\\\\+")
     );
 
     return "Ok";
