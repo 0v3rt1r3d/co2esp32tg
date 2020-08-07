@@ -89,11 +89,7 @@ pub fn handle_sensors_hist(
             }
         }).collect()
     );
-    tgapi::send_image(
-        token,
-        &update.message.chat.id.to_string(),
-        "pressure"
-    );
+    tgapi::send_image(token, &update.message.chat.id.to_string(), "pressure.png");
 
     chart::make_chart_encoded_base64(
         String::from("humidity"),
@@ -105,11 +101,7 @@ pub fn handle_sensors_hist(
             }
         }).collect()
     );
-    tgapi::send_image(
-        token,
-        &update.message.chat.id.to_string(),
-        "humidity"
-    );
+    tgapi::send_image(token, &update.message.chat.id.to_string(), "humidity.png");
 
     &chart::make_chart_encoded_base64(
         String::from("co2"),
@@ -120,11 +112,7 @@ pub fn handle_sensors_hist(
                 None => 0f64
             }
         }).collect());
-    tgapi::send_image(
-        token,
-        &update.message.chat.id.to_string(),
-        "co2"
-    );
+    tgapi::send_image(token, &update.message.chat.id.to_string(), "co2.png");
 
     chart::make_chart_encoded_base64(
         String::from("temperature"),
@@ -136,7 +124,7 @@ pub fn handle_sensors_hist(
             }
         }).collect()
     );
-    tgapi::send_image(token, &update.message.chat.id.to_string(), "temperature");
+    tgapi::send_image(token, &update.message.chat.id.to_string(), "temperature.png");
     return "Ok";
 }
 
