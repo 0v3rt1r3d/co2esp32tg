@@ -21,7 +21,7 @@ pub fn make_chart_encoded_base64(
         sorted_y.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
         let mut chart1 = ChartBuilder::on(&root)
-            .caption(title, ("sans-serif", 50).into_font())
+            .caption(&title, ("sans-serif", 50).into_font())
             .margin(5)
             .x_label_area_size(30)
             .y_label_area_size(30)
@@ -44,6 +44,6 @@ pub fn make_chart_encoded_base64(
     let img = image::DynamicImage::ImageRgb8(img);
     let mut output = vec![];
     img.write_to(&mut output, image::ImageOutputFormat::Png).unwrap();
-
+    img.save(format!("{}.png", &title)).unwrap();
     return base64::encode(output);
 }

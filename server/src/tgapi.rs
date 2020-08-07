@@ -38,3 +38,26 @@ pub fn send_message(
 
     println!("Result: {}, {}", result.status(), result.text().unwrap());
 }
+
+pub fn send_image(
+    token: &str,
+    chat_id: &str,
+    // image_base64: &str
+    filename: &str
+) {
+    let client = reqwest::blocking::Client::new();
+    let form = reqwest::blocking::multipart::Form::new()
+        .text("chat_id", chat_id.to_string())
+        // .part("photo", reqwest::blocking::multipart::Part::bytes());
+        .file("photo", filename)
+        .unwrap();
+
+    let request = client.post(&format!("https://api.telegram.org/bot{}/sendPhoto", token))
+        .multipart(form)
+        .build()
+        .unwrap();
+    println!("{:?}", request);
+
+    let result = client.execute(request).unwrap();
+    println!("Result: {}, {}", result.status(), result.text().unwrap());
+}

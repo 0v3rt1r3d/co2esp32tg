@@ -56,15 +56,11 @@ fn updates(
 ) ->&'static str {
     match update.message.text.as_str() {
         "/sensors" => handlers::handle_sensors(&token.token, &update, last_sd.inner(), storage.inner()),
+        "/sensors_hist" => handlers::handle_sensors_hist(&token.token, &update, storage.inner()),
         "/chat_id" => handlers::handle_chat_id(&token.token, &update),
         _ => handlers::handle_unknown_command(&token.token, &update),
     };
     return "Ok";
-}
-
-#[get("/chart")] // TODO: for debug, remove later
-fn chart(storage: State<storage::StoragePtr>) -> String {
-    return handlers::handle_sensors_hist(storage.inner());
 }
 
 fn main() {
@@ -72,7 +68,7 @@ fn main() {
     let token = env::var("BOT_TOKEN").expect("Bot token should be defined");
 
     rocket::ignite()
-        .mount("/", routes![index, sensors, updates, chart])
+        .mount("/", routes![index, sensors, updates])
         .manage(storage::make_async_storage(String::from("sensors.db")))
         .manage(make_async_sensors_data())
         .manage(BotToken{ token })

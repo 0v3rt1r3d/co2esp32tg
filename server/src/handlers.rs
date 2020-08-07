@@ -73,13 +73,11 @@ pub fn handle_sensors(
 
 // TODO: make it worked
 pub fn handle_sensors_hist(
-    // token: &String,
-    // update: &tgapi::Update,
+    token: &String,
+    update: &tgapi::Update,
     storage: &storage::StoragePtr
-) -> String {
+) -> &'static str {
     let values = (*storage.lock().unwrap()).read().unwrap();
-
-    println!("Values: {:?}", values.iter().map(|it| {it.timestamp as f32}).collect::<std::vec::Vec<f32>>());
 
     chart::make_chart_encoded_base64(
         String::from("pressure"),
@@ -91,6 +89,12 @@ pub fn handle_sensors_hist(
             }
         }).collect()
     );
+    tgapi::send_image(
+        token,
+        &update.message.chat.id.to_string(),
+        "pressure"
+    );
+
     chart::make_chart_encoded_base64(
         String::from("humidity"),
         values.iter().map(|it| {it.timestamp}).collect(),
@@ -101,7 +105,13 @@ pub fn handle_sensors_hist(
             }
         }).collect()
     );
-    chart::make_chart_encoded_base64(
+    tgapi::send_image(
+        token,
+        &update.message.chat.id.to_string(),
+        "humidity"
+    );
+
+    &chart::make_chart_encoded_base64(
         String::from("co2"),
         values.iter().map(|it| {it.timestamp}).collect(),
         values.iter().map(|it| {
@@ -109,9 +119,14 @@ pub fn handle_sensors_hist(
                 Some(v) => v,
                 None => 0f64
             }
-        }).collect()
+        }).collect());
+    tgapi::send_image(
+        token,
+        &update.message.chat.id.to_string(),
+        "co2"
     );
-    return chart::make_chart_encoded_base64(
+
+    chart::make_chart_encoded_base64(
         String::from("temperature"),
         values.iter().map(|it| {it.timestamp}).collect::<std::vec::Vec<u32>>(),
         values.iter().map(|it| {
@@ -121,6 +136,8 @@ pub fn handle_sensors_hist(
             }
         }).collect()
     );
+    tgapi::send_image(token, &update.message.chat.id.to_string(), "temperature");
+    return "Ok";
 }
 
 pub fn handle_unknown_command(token: &String, update: &tgapi::Update) -> &'static str {
