@@ -15,6 +15,7 @@ mod chart;
 mod handlers;
 mod storage;
 mod tgapi;
+mod utils;
 
 
 struct BotToken {
@@ -70,7 +71,6 @@ fn debug(
 ) -> &'static str {
     return handlers::handle_sensors_hist(&token.token, &tgapi::Update {message: tgapi::Message{text: String::from(""), chat: tgapi::Chat{id: 0u64}}}, &storage);
 }
-
 
 fn main() {
     println!("http://0.0.0.0:443/debug");

@@ -42,7 +42,7 @@ pub fn send_message(
 pub fn send_image(
     token: &str,
     chat_id: &str,
-    // image_base64: &str
+    // image_base64: &str // TODO: send from buffer
     filename: &str
 ) {
     let client = reqwest::blocking::Client::new();

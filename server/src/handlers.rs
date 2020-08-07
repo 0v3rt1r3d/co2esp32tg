@@ -1,8 +1,8 @@
 use super::tgapi;
 use super::storage;
 use super::chart;
+use super::utils;
 
-use chrono::{NaiveDateTime, FixedOffset};
 
 pub fn handle_index(storage: &storage::StoragePtr) -> String {
     let locked = storage.lock();
@@ -44,9 +44,7 @@ pub fn handle_sensors(
         Some(s) => s,
         None => return "no"
     };
-    let naive_dt = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0);
-    let msk_dt : chrono::DateTime<FixedOffset> = chrono::DateTime::from_utc(naive_dt, chrono::FixedOffset::east(60 * 60 * 3));
-    let formatted_date = msk_dt.to_string();
+    let formatted_date = utils::parse_time(last_sd.timestamp.into()).to_string();
 
     tgapi::send_message(
         &token,
@@ -73,6 +71,18 @@ pub fn handle_sensors(
     return "Ok";
 }
 
+fn send_chart(
+    token: &String,
+    chat_id: &String,
+    title: &'static str,
+    filename: &'static str,
+    x: &std::vec::Vec<i64>,
+    y: &std::vec::Vec<f64>
+) {
+    chart::make_chart_encoded_base64(title, filename, x, y);
+    tgapi::send_image(token, chat_id, filename);
+}
+
 // TODO: make it worked
 pub fn handle_sensors_hist(
     token: &String,
@@ -80,53 +90,65 @@ pub fn handle_sensors_hist(
     storage: &storage::StoragePtr
 ) -> &'static str {
     let values = (*storage.lock().unwrap()).read().unwrap();
+    let times = values.iter().map(|it| {it.timestamp}).collect();
+    let chat_id = update.message.chat.id.to_string().clone();
 
-    chart::make_chart_encoded_base64(
-        String::from("pressure"),
-        values.iter().map(|it| {it.timestamp}).collect(),
-        values.iter().map(|it| {
+    send_chart(
+        &token,
+        &chat_id,
+        "Pressure, ???",
+        "pressure.png",
+        &times,
+        &values.iter().map(|it| {
             match it.pressure {
                 Some(v) => v,
                 None => 0f64
             }
         }).collect()
     );
-    tgapi::send_image(token, &update.message.chat.id.to_string(), "pressure.png");
 
-    chart::make_chart_encoded_base64(
-        String::from("humidity"),
-        values.iter().map(|it| {it.timestamp}).collect(),
-        values.iter().map(|it| {
+    send_chart(
+        token,
+        &chat_id,
+        "Humidity, %",
+        "humidity.png",
+        &times,
+        &values.iter().map(|it| {
             match it.humidity {
                 Some(v) => v,
                 None => 0f64
             }
         }).collect()
     );
-    tgapi::send_image(token, &update.message.chat.id.to_string(), "humidity.png");
 
-    &chart::make_chart_encoded_base64(
-        String::from("co2"),
-        values.iter().map(|it| {it.timestamp}).collect(),
-        values.iter().map(|it| {
+    send_chart(
+        token,
+        &chat_id,
+        "co2, ppm",
+        "co2.png",
+        &times,
+        &values.iter().map(|it| {
             match it.co2 {
                 Some(v) => v,
                 None => 0f64
             }
-        }).collect());
-    tgapi::send_image(token, &update.message.chat.id.to_string(), "co2.png");
+        }).collect()
+    );
 
-    chart::make_chart_encoded_base64(
-        String::from("temperature"),
-        values.iter().map(|it| {it.timestamp}).collect::<std::vec::Vec<i64>>(),
-        values.iter().map(|it| {
+    send_chart(
+        &token,
+        &chat_id,
+        "temperature, C",
+        "temperature.png",
+        &times,
+        &values.iter().map(|it| {
             match it.temperature {
                 Some(v) => v,
                 None => 0f64
             }
         }).collect()
     );
-    tgapi::send_image(token, &update.message.chat.id.to_string(), "temperature.png");
+
     return "Ok";
 }
 

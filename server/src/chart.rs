@@ -1,16 +1,15 @@
 use base64;
+use chrono::{FixedOffset, DateTime};
 
-use chrono::{NaiveDateTime, FixedOffset, DateTime};
+use super::utils;
 
-fn parse_time(timestamp: i64) -> chrono::DateTime<FixedOffset> {
-    let naive_dt = NaiveDateTime::from_timestamp(timestamp, 0);
-    chrono::DateTime::from_utc(naive_dt, chrono::FixedOffset::east(60 * 60 * 3))
-}
 
+// TODO: do not save to file, send from buffer
 pub fn make_chart_encoded_base64(
-    title: String,
-    x: std::vec::Vec<i64>,
-    y: std::vec::Vec<f64>
+    title: &'static str,
+    filename: &'static str,
+    x: &std::vec::Vec<i64>,
+    y: &std::vec::Vec<f64>
 ) -> String {
     use plotters::prelude::*;
 
@@ -32,7 +31,7 @@ pub fn make_chart_encoded_base64(
             .y_label_area_size(60)
             .margin_right(60)
             .build_ranged(
-                 parse_time(x.first().unwrap().clone()) .. parse_time(x.last().unwrap().clone()),
+                 utils::parse_time(x.first().unwrap().clone())..utils::parse_time(x.last().unwrap().clone()),
                 sorted_y.first().unwrap().clone()..sorted_y.last().unwrap().clone()
             )
             .unwrap();
@@ -47,7 +46,7 @@ pub fn make_chart_encoded_base64(
             .unwrap();
         chart
             .draw_series(LineSeries::new(
-                x.clone().into_iter().map(|a| parse_time(a)).zip(y.clone().into_iter().map(|a| a as f32)),
+                x.clone().into_iter().map(|t| utils::parse_time(t)).zip(y.clone().into_iter().map(|a| a as f32)),
                  ShapeStyle {color: BLUE.to_rgba(), filled: true, stroke_width: 1}
             ))
             .unwrap();
@@ -56,6 +55,6 @@ pub fn make_chart_encoded_base64(
     let img = image::DynamicImage::ImageRgb8(img);
     let mut output = vec![];
     img.write_to(&mut output, image::ImageOutputFormat::Png).unwrap();
-    img.save(format!("{}.png", &title)).unwrap();
+    img.save(&filename).unwrap();
     return base64::encode(output);
 }
