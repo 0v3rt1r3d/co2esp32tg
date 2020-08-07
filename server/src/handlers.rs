@@ -2,7 +2,7 @@ use super::tgapi;
 use super::storage;
 use super::chart;
 
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, FixedOffset};
 
 pub fn handle_index(storage: &storage::StoragePtr) -> String {
     let locked = storage.lock();
@@ -44,7 +44,9 @@ pub fn handle_sensors(
         Some(s) => s,
         None => return "no"
     };
-    let formatted_date = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0).to_string();
+    let naive_dt = NaiveDateTime::from_timestamp(last_sd.timestamp.into(), 0);
+    let msk_dt : chrono::DateTime<FixedOffset> = chrono::DateTime::from_utc(naive_dt, chrono::FixedOffset::east(60 * 60 * 3));
+    let formatted_date = msk_dt.to_string();
 
     tgapi::send_message(
         &token,
@@ -116,7 +118,7 @@ pub fn handle_sensors_hist(
 
     chart::make_chart_encoded_base64(
         String::from("temperature"),
-        values.iter().map(|it| {it.timestamp}).collect::<std::vec::Vec<u32>>(),
+        values.iter().map(|it| {it.timestamp}).collect::<std::vec::Vec<i64>>(),
         values.iter().map(|it| {
             match it.temperature {
                 Some(v) => v,

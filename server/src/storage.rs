@@ -5,7 +5,7 @@ use std::fs;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SensorsData {
-    pub timestamp: u32,
+    pub timestamp: i64,
     pub co2: Option<f64>,
     pub humidity: Option<f64>,
     pub pressure: Option<f64>,
@@ -87,7 +87,7 @@ impl Storage {
             .expect("Failed to get request");
         let iter = request.query_map(params![], |row| {
             Ok(SensorsData {
-                timestamp: row.get::<usize, u32>(0).unwrap(),
+                timestamp: row.get::<usize, i64>(0).unwrap(),
                 co2: to_opt(row.get::<usize, f64>(1)),
                 humidity: to_opt(row.get::<usize, f64>(2)),
                 pressure: to_opt(row.get::<usize, f64>(3)),

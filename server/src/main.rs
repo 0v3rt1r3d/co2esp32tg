@@ -63,12 +63,21 @@ fn updates(
     return "Ok";
 }
 
+#[get("/debug")]
+fn debug(
+    token: State<BotToken>,
+    storage: State<storage::StoragePtr>
+) -> &'static str {
+    return handlers::handle_sensors_hist(&token.token, &tgapi::Update {message: tgapi::Message{text: String::from(""), chat: tgapi::Chat{id: 0u64}}}, &storage);
+}
+
+
 fn main() {
-    println!("http://0.0.0.0:443/chart");
+    println!("http://0.0.0.0:443/debug");
     let token = env::var("BOT_TOKEN").expect("Bot token should be defined");
 
     rocket::ignite()
-        .mount("/", routes![index, sensors, updates])
+        .mount("/", routes![index, sensors, updates, debug])
         .manage(storage::make_async_storage(String::from("sensors.db")))
         .manage(make_async_sensors_data())
         .manage(BotToken{ token })
