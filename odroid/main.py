@@ -12,7 +12,7 @@ import syslog
 import time
 
 urls = [
-    "http://192.168.1.76:443/sensors",
+    "http://<YOUR_IP_IN_LOCAL_NET>:443/sensors",
 ]
 
 interrupted = False
@@ -51,10 +51,10 @@ def send_or_log_error(url, data):
         print(message, file=sys.stderr)
 
 
-# Load aml_i2c module before
+# Load aml_i2c module before launching the script
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, sigint_handler)
-    sleep_time_s = 5 # TODO: set time to 60 * 5
+    sleep_time_s = 60 * 5 # each 5 min
     while not interrupted:
         data = json.dumps(get_values())
         for url in urls:
