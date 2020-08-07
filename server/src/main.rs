@@ -43,6 +43,7 @@ fn updates(
     token: State<BotToken>
 ) -> &'static str {
     match update.message.text.as_str() {
+        "/erase" => handlers::handle_erase(&token.token, &update, storage.inner()),
         "/sensors" => handlers::handle_sensors(&token.token, &update, storage.inner()),
         "/sensors_hist" => handlers::handle_sensors_hist(&token.token, &update, storage.inner()),
         "/chat_id" => handlers::handle_chat_id(&token.token, &update),

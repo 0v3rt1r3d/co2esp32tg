@@ -158,3 +158,17 @@ pub fn handle_chat_id(token: &String, update: &tgapi::Update) -> &'static str {
     );
     return "Ok";
 }
+
+pub fn handle_erase(
+    token: &String,
+    update: &tgapi::Update,
+    storage: &storage::StoragePtr
+) -> &'static str {
+    (*storage.lock().unwrap()).erase_previous_weeks();
+    tgapi::send_message(
+        token,
+        &update.message.chat.id.to_string(),
+        "Old database entities were erased"
+    );
+    return "Ok";
+}

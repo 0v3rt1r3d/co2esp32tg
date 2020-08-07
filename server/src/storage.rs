@@ -1,6 +1,7 @@
 use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::time::{Duration, SystemTime};
 
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -121,6 +122,17 @@ impl Storage {
         })
             .unwrap();
         Ok(iter.map(|data| {data.unwrap()}).collect::<std::vec::Vec<SensorsData>>()[0].clone())
+    }
+
+    pub fn erase_previous_weeks(&self) {
+        let mut request = self.connection
+            .prepare(&format!(" \
+                DELETE FROM sensors \
+                WHERE timestamp < {}",
+                (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap() - Duration::from_secs(60 * 60 * 24 * 7)).as_secs()
+            ))
+            .unwrap();
+        request.execute(params![]).unwrap();
     }
 
     pub fn db_size_mb(&self) -> f64 {
