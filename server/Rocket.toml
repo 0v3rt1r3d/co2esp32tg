@@ -2,15 +2,8 @@
 address = "0.0.0.0"
 port = 443
 log = "normal"
-tls = { certs = "/etc/letsencrypt/live/bot.overtired.xyz/fullchain.pem", key = "/etc/letsencrypt/live/bot.overtired.xyz/privkey.pem" }
-
-[staging]
-address = "0.0.0.0"
-port = 443
-log = "normal"
 
 [production]
 address = "0.0.0.0"
 port = 443
 log = "critical"
-tls = { certs = "/etc/letsencrypt/live/bot.overtired.xyz/fullchain.pem", key = "/etc/letsencrypt/live/bot.overtired.xyz/privkey.pem" }

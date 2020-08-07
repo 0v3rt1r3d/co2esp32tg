@@ -18,7 +18,6 @@ pub struct Storage {
     db_file: String
 }
 
-// TODO: is there a builtin way?
 fn to_opt<T>(result: Result<T>) -> Option<T> {
     match result {
         Ok(value) => Some(value),
@@ -55,7 +54,6 @@ impl Storage {
     }
 
     pub fn save_sensors(&self, data: &SensorsData) {
-        println!("{:?}", data);
         self.connection.execute(
             "INSERT INTO sensors (
                 timestamp, 

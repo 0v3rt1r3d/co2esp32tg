@@ -22,7 +22,7 @@ pub fn send_message(
     text: &str,
 ) {
     let client = reqwest::blocking::Client::new();
-    let result = client.post(&format!("https://api.telegram.org/bot{}/sendMessage", token))
+    client.post(&format!("https://api.telegram.org/bot{}/sendMessage", token))
         .body(format!(
             "{{ \
                 \"parse_mode\":\"MarkdownV2\", \
@@ -35,20 +35,16 @@ pub fn send_message(
         .header("Content-Type", "application/json")
         .send()
         .unwrap();
-
-    println!("Result: {}, {}", result.status(), result.text().unwrap());
 }
 
 pub fn send_image(
     token: &str,
     chat_id: &str,
-    // image_base64: &str // TODO: send from buffer
     filename: &str
 ) {
     let client = reqwest::blocking::Client::new();
     let form = reqwest::blocking::multipart::Form::new()
         .text("chat_id", chat_id.to_string())
-        // .part("photo", reqwest::blocking::multipart::Part::bytes());
         .file("photo", filename)
         .unwrap();
 
@@ -56,8 +52,6 @@ pub fn send_image(
         .multipart(form)
         .build()
         .unwrap();
-    println!("{:?}", request);
 
-    let result = client.execute(request).unwrap();
-    println!("Result: {}, {}", result.status(), result.text().unwrap());
+    client.execute(request).unwrap();
 }

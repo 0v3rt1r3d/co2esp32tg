@@ -40,7 +40,7 @@ pub fn handle_sensors(
         &token,
         &update.message.chat.id.to_string(),
         &format!("
-*timestamp*: {} UTC
+*timestamp*: {}
 *temperature*: {:.1} C
 *humidity*: {:.2}%
 *co2*: {:.2} ppm
@@ -70,7 +70,7 @@ fn send_chart(
     x: &std::vec::Vec<i64>,
     y: &std::vec::Vec<f64>
 ) {
-    chart::make_chart_encoded_base64(title, filename, x, y);
+    chart::save_chart(title, filename, x, y);
     tgapi::send_image(token, chat_id, filename);
 }
 

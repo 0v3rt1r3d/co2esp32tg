@@ -1,16 +1,14 @@
-use base64;
 use chrono::{FixedOffset, DateTime};
 
 use super::utils;
 
 
-// TODO: do not save to file, send from buffer
-pub fn make_chart_encoded_base64(
+pub fn save_chart(
     title: &'static str,
     filename: &'static str,
     x: &std::vec::Vec<i64>,
     y: &std::vec::Vec<f64>
-) -> String {
+) {
     use plotters::prelude::*;
 
     let width = 1400;
@@ -53,8 +51,8 @@ pub fn make_chart_encoded_base64(
     }
     let img = image::RgbImage::from_raw(width, height, buffer).unwrap();
     let img = image::DynamicImage::ImageRgb8(img);
-    let mut output = vec![];
-    img.write_to(&mut output, image::ImageOutputFormat::Png).unwrap();
+    // let mut output = vec![];
+    // img.write_to(&mut output, image::ImageOutputFormat::Png).unwrap();
+    // return base64::encode(output);
     img.save(&filename).unwrap();
-    return base64::encode(output);
 }
