@@ -1,8 +1,6 @@
 # co2esp32tg
 
-## What is this?
-
-This is kind of remote termometer using telegram bot as an interface. So, I can find out it's time to open a window using the most popular messenger in Russia.
+This is a remote termometer which uses a telegram bot as an interface. So, I can find out it's time to open a window using the most popular messenger in Russia.
 
 <img src="./doc/telegram.gif" width="200">
 
