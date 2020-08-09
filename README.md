@@ -15,6 +15,7 @@ Two sensors, MH-z19 (co2) and bme280 (humidity, pressure, temperature), are conn
 ## Usage
 
 You might want to launch your own bot implementation, so follow the steps:
-1) Buy odroid (or raspberry) device, MH-z19 and bme280 sensors. Fill servicemd template and enable service.
+1) Buy odroid (or raspberry) device, MH-z19 and bme280 sensors.
 2) Create a virtual machine with public IP, fill `server` systemd confing (ssl-sertificates, working directory, etc), and enable it.
-3) Create a new telegram bot and set web hook for your virtual host.
+3) Fill systemd template for odroid and enable service.
+4) Create a new telegram bot and set web hook for your virtual host.
