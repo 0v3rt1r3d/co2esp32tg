@@ -173,3 +173,20 @@ pub fn handle_erase(
     );
     return "Ok";
 }
+
+pub fn handle_start(
+    token: &String,
+    update: &tgapi::Update
+) -> &'static str {
+    tgapi::send_message(
+        token,
+        &update.message.chat.id.to_string(),
+        "
+I am overtired's bot. I can send you:
+- Send current reading from air sensors
+- Send charts with air sensors values changes
+- Send your current chat id (used to send notifications)
+"
+    );
+    return "Ok";
+}

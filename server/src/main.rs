@@ -46,6 +46,7 @@ fn updates(
         "/erase" => handlers::handle_erase(&token.token, &update, storage.inner()),
         "/sensors" => handlers::handle_sensors(&token.token, &update, storage.inner()),
         "/sensors_hist" => handlers::handle_sensors_hist(&token.token, &update, storage.inner()),
+        "/start" => handlers::handle_start(&token.token, &update),
         "/chat_id" => handlers::handle_chat_id(&token.token, &update),
         _ => handlers::handle_unknown_command(&token.token, &update),
     };
