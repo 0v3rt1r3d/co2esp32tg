@@ -1,4 +1,5 @@
 use super::tgapi;
+use super::tgapi::TgEscapable;
 use super::storage;
 use super::chart;
 use super::utils;
@@ -53,10 +54,7 @@ pub fn handle_sensors(
                  last_sd.co2.unwrap(),
                  last_sd.pressure.unwrap(),
                  (*storage.lock().unwrap()).db_size_mb()
-        )
-            .replace("-", "\\\\-")
-            .replace(".", "\\\\.")
-            .replace("+", "\\\\+")
+        ).escape_tg()
     );
 
     return "Ok";
@@ -181,12 +179,16 @@ pub fn handle_start(
     tgapi::send_message(
         token,
         &update.message.chat.id.to_string(),
-        "
+        &"
 I am overtired's bot. I can send you:
 - Send current reading from air sensors
 - Send charts with air sensors values changes
 - Send your current chat id (used to send notifications)
+
+See the commands list.
 "
+        .to_string()
+        .escape_tg()
     );
     return "Ok";
 }

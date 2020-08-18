@@ -55,3 +55,18 @@ pub fn send_image(
 
     client.execute(request).unwrap();
 }
+
+pub trait TgEscapable {
+    fn escape_tg(&self) -> String;
+}
+
+impl TgEscapable for String {
+    fn escape_tg(&self) -> String {
+        self
+            .replace("-", "\\\\-")
+            .replace(".", "\\\\.")
+            .replace("+", "\\\\+")
+            .replace("(", "\\\\(")
+            .replace(")", "\\\\)")
+    }
+}
