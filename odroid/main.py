@@ -38,7 +38,7 @@ def get_values():
 
 def send_or_log_error(url, data):
     try:
-        response = requests.post(url = url, data = data)
+        response = requests.post(url=url, data=data, timeout=5)
         print(
             "Sent sensors data, http code = {}; body = {}".format(
                 response.status_code,
