@@ -1,0 +1,52 @@
+{
+    "update_id":387753903,
+    "message":{
+        "message_id":49,
+        "from":{
+            "id":125002412,
+            "is_bot":false,
+            "first_name":"Alexandr",
+            "last_name":"Gruzintsev",
+            "username":"overtired",
+            "language_code":"ru"
+        },
+        "chat":{
+            "id":125002412,
+            "first_name":"Alexandr",
+            "last_name":"Gruzintsev",
+            "username":"overtired",
+            "type":"private"
+        },
+        "date":1595338637,
+        "text":"asdf"
+    }
+}
+
+{
+    "update_id":387753904,
+    "message":
+    {
+        "message_id":50,
+        "from":{
+            "id":125002412,
+            "is_bot":false,
+            "first_name":"Alexandr",
+            "last_name":"Gruzintsev",
+            "username":"overtired",
+            "language_code":"ru"
+        },
+        "chat":{
+            "id":125002412,
+            "first_name":"Alexandr",
+            "last_name":"Gruzintsev",
+            "username":"overtired",
+            "type":"private"
+        },
+        "date":1595338648,
+        "text":"/sensors",
+        "entities":
+                [
+                    {"offset":0,"length":8,"type":"bot_command"}
+                ]
+        }
+    }
