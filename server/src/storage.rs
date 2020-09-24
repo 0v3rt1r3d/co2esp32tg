@@ -34,11 +34,11 @@ pub fn to_str<T: std::string::ToString>(option: Option<T>) -> String {
 
 pub type StoragePtr = std::sync::Arc<std::sync::Mutex<Storage>>;
 pub fn make_async_storage(db_name: String) -> StoragePtr {
-    std::sync::Arc::new(std::sync::Mutex::new(Storage::new(db_name)))
+    std::sync::Arc::new(std::sync::Mutex::new(Storage::new(db_name).unwrap()))
 }
 
 impl Storage {
-    pub fn new(database_url: String) -> Storage {
+    pub fn new(database_url: String) -> std::result::Result<Storage, rusqlite::Error> {
         let connection = Connection::open(&database_url).expect("failed to connect");
         connection.execute(
             "CREATE TABLE IF NOT EXISTS sensors (
@@ -49,11 +49,11 @@ impl Storage {
                 temperature REAL
             )",
             params![],
-        ).expect("WTF!?");
-        Storage { connection, db_file: database_url }
+        )?;
+        return Ok(Storage { connection, db_file: database_url })
     }
 
-    pub fn save_sensors(&self, data: &SensorsData) {
+    pub fn save_sensors(&self, data: &SensorsData) -> std::result::Result<(), rusqlite::Error>{
         self.connection.execute(
             "INSERT INTO sensors (
                 timestamp, 
@@ -70,7 +70,8 @@ impl Storage {
                 to_str(data.pressure),
                 to_str(data.temperature)
             ],
-        ).expect("Sql request failed");
+        )?;
+        return Ok(());
     }
 
     pub fn read(&self) -> Result<std::vec::Vec<SensorsData>> {
@@ -122,15 +123,15 @@ impl Storage {
         Ok(iter.map(|data| {data.unwrap()}).collect::<std::vec::Vec<SensorsData>>()[0].clone())
     }
 
-    pub fn erase_previous_weeks(&self) {
+    pub fn erase_previous_weeks(&self) -> std::result::Result<(), rusqlite::Error> {
         let mut request = self.connection
             .prepare(&format!(" \
                 DELETE FROM sensors \
                 WHERE timestamp < {}",
                 (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap() - Duration::from_secs(60 * 60 * 24 * 7)).as_secs()
-            ))
-            .unwrap();
-        request.execute(params![]).unwrap();
+            ))?;
+        request.execute(params![])?;
+        return Ok(());
     }
 
     pub fn db_size_mb(&self) -> f64 {

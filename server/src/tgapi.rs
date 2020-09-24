@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+fn default_timeout() -> std::time::Duration {
+    return std::time::Duration::new(10,0);
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Chat {
     pub id: u64
@@ -20,7 +24,7 @@ pub fn send_message(
     token: &str,
     chat_id: &str,
     text: &str,
-) {
+) -> std::result::Result<(), reqwest::Error>{
     let client = reqwest::blocking::Client::new();
     client.post(&format!("https://api.telegram.org/bot{}/sendMessage", token))
         .body(format!(
@@ -33,27 +37,29 @@ pub fn send_message(
             text,
         ))
         .header("Content-Type", "application/json")
-        .send()
-        .unwrap();
+        .timeout(default_timeout())
+        .send()?;
+    return Ok(());
 }
 
 pub fn send_image(
     token: &str,
     chat_id: &str,
     filename: &str
-) {
+) -> std::result::Result<(), Box<dyn std::error::Error>>{
     let client = reqwest::blocking::Client::new();
     let form = reqwest::blocking::multipart::Form::new()
         .text("chat_id", chat_id.to_string())
-        .file("photo", filename)
-        .unwrap();
+        .file("photo", filename)?;
 
     let request = client.post(&format!("https://api.telegram.org/bot{}/sendPhoto", token))
         .multipart(form)
-        .build()
-        .unwrap();
+        .timeout(default_timeout())
+        .build()?;
+        
 
-    client.execute(request).unwrap();
+    client.execute(request)?;
+    return Ok(());
 }
 
 pub trait TgEscapable {

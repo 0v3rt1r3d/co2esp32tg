@@ -32,7 +32,7 @@ fn sensors(
     storage: State<storage::StoragePtr>
 ) -> &'static str {
     let locked = storage.lock().unwrap();
-    locked.save_sensors(&data);
+    locked.save_sensors(&data).unwrap();
     return "Ok";
 }
 
@@ -41,8 +41,8 @@ fn updates(
     update: Json<tgapi::Update>,
     storage: State<storage::StoragePtr>,
     token: State<BotToken>
-) -> &'static str {
-    match update.message.text.as_str() {
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
+    return match update.message.text.as_str() {
         "/erase" => handlers::handle_erase(&token.token, &update, storage.inner()),
         "/sensors" => handlers::handle_sensors(&token.token, &update, storage.inner()),
         "/sensors_hist" => handlers::handle_sensors_hist(&token.token, &update, storage.inner()),
@@ -50,7 +50,6 @@ fn updates(
         "/chat_id" => handlers::handle_chat_id(&token.token, &update),
         _ => handlers::handle_unknown_command(&token.token, &update),
     };
-    return "Ok";
 }
 
 fn main() {

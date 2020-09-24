@@ -33,8 +33,8 @@ pub fn handle_sensors(
     token: &String,
     update: &tgapi::Update,
     storage: &storage::StoragePtr
-) -> &'static str {
-    let last_sd = (*storage.lock().unwrap()).read_last().unwrap();
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
+    let last_sd = (*storage.lock().unwrap()).read_last()?;
     let formatted_date = utils::parse_time(last_sd.timestamp.into()).to_string();
 
     tgapi::send_message(
@@ -55,9 +55,9 @@ pub fn handle_sensors(
                  last_sd.pressure.unwrap(),
                  (*storage.lock().unwrap()).db_size_mb()
         ).escape_tg()
-    );
+    )?;
 
-    return "Ok";
+    return Ok(String::from("Ok"));
 }
 
 fn send_chart(
@@ -67,17 +67,17 @@ fn send_chart(
     filename: &'static str,
     x: &std::vec::Vec<i64>,
     y: &std::vec::Vec<f64>
-) {
+) -> std::result::Result<(), Box<dyn std::error::Error>>{
     chart::save_chart(title, filename, x, y);
-    tgapi::send_image(token, chat_id, filename);
+    return tgapi::send_image(token, chat_id, filename);
 }
 
 pub fn handle_sensors_hist(
     token: &String,
     update: &tgapi::Update,
     storage: &storage::StoragePtr
-) -> &'static str {
-    let values = (*storage.lock().unwrap()).read().unwrap();
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
+    let values = (*storage.lock().unwrap()).read()?;
     let times = values.iter().map(|it| {it.timestamp}).collect();
     let chat_id = update.message.chat.id.to_string().clone();
 
@@ -93,7 +93,7 @@ pub fn handle_sensors_hist(
                 None => 0f64
             }
         }).collect()
-    );
+    )?;
 
     send_chart(
         token,
@@ -107,7 +107,7 @@ pub fn handle_sensors_hist(
                 None => 0f64
             }
         }).collect()
-    );
+    )?;
 
     send_chart(
         token,
@@ -121,7 +121,7 @@ pub fn handle_sensors_hist(
                 None => 0f64
             }
         }).collect()
-    );
+    )?;
 
     send_chart(
         token,
@@ -135,47 +135,47 @@ pub fn handle_sensors_hist(
                 None => 0f64
             }
         }).collect()
-    );
+    )?;
 
-    return "Ok";
+    return Ok(String::from("Ok"));
 }
 
-pub fn handle_unknown_command(token: &String, update: &tgapi::Update) -> &'static str {
+pub fn handle_unknown_command(token: &String, update: &tgapi::Update) -> std::result::Result<String, Box<dyn std::error::Error>> {
     tgapi::send_message(
         token,
         &update.message.chat.id.to_string(),
         "Unknown command"
-    );
-    return "Ok";
+    )?;
+    return Ok(String::from("Ok"));
 }
 
-pub fn handle_chat_id(token: &String, update: &tgapi::Update) -> &'static str {
+pub fn handle_chat_id(token: &String, update: &tgapi::Update) -> std::result::Result<String, Box<dyn std::error::Error>> {
     tgapi::send_message(
         token,
         &update.message.chat.id.to_string(),
         &format!("Your `chat_id` is: `{}`", update.message.chat.id)
-    );
-    return "Ok";
+    )?;
+    return Ok(String::from("Ok"));
 }
 
 pub fn handle_erase(
     token: &String,
     update: &tgapi::Update,
     storage: &storage::StoragePtr
-) -> &'static str {
-    (*storage.lock().unwrap()).erase_previous_weeks();
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
+    (*storage.lock().unwrap()).erase_previous_weeks()?;
     tgapi::send_message(
         token,
         &update.message.chat.id.to_string(),
         "Old database entities were erased"
-    );
-    return "Ok";
+    )?;
+    return Ok(String::from("Ok"));
 }
 
 pub fn handle_start(
     token: &String,
     update: &tgapi::Update
-) -> &'static str {
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
     tgapi::send_message(
         token,
         &update.message.chat.id.to_string(),
@@ -189,6 +189,6 @@ See the commands list.
 "
         .to_string()
         .escape_tg()
-    );
-    return "Ok";
+    )?;
+    return Ok(String::from("Ok"));
 }
