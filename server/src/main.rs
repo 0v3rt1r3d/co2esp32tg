@@ -45,7 +45,8 @@ fn updates(
     return match update.message.text.as_str() {
         "/erase" => handlers::handle_erase(&token.token, &update, storage.inner()),
         "/sensors" => handlers::handle_sensors(&token.token, &update, storage.inner()),
-        "/sensors_hist" => handlers::handle_sensors_hist(&token.token, &update, storage.inner()),
+        "/sensors_histogram_all" => handlers::handle_sensors_histogram_all(&token.token, &update, storage.inner()),
+        "/sensors_histogram_3_days" => handlers::handle_sensors_histogram_three_days(&token.token, &update, storage.inner()),
         "/start" => handlers::handle_start(&token.token, &update),
         "/chat_id" => handlers::handle_chat_id(&token.token, &update),
         _ => handlers::handle_unknown_command(&token.token, &update),

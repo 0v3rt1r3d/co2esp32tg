@@ -4,6 +4,8 @@ use super::storage;
 use super::chart;
 use super::utils;
 
+use std::time::{Duration, SystemTime};
+
 
 pub fn handle_index(storage: &storage::StoragePtr) -> String {
     let locked = storage.lock();
@@ -72,12 +74,84 @@ fn send_chart(
     return tgapi::send_image(token, chat_id, filename);
 }
 
-pub fn handle_sensors_hist(
+pub fn handle_sensors_histogram_all(
     token: &String,
     update: &tgapi::Update,
     storage: &storage::StoragePtr
 ) -> std::result::Result<String, Box<dyn std::error::Error>> {
     let values = (*storage.lock().unwrap()).read()?;
+    let times = values.iter().map(|it| {it.timestamp}).collect();
+    let chat_id = update.message.chat.id.to_string().clone();
+
+    send_chart(
+        token,
+        &chat_id,
+        "Pressure, hPa",
+        "pressure.png",
+        &times,
+        &values.iter().map(|it| {
+            match it.pressure {
+                Some(v) => v,
+                None => 0f64
+            }
+        }).collect()
+    )?;
+
+    send_chart(
+        token,
+        &chat_id,
+        "Humidity, %",
+        "humidity.png",
+        &times,
+        &values.iter().map(|it| {
+            match it.humidity {
+                Some(v) => v,
+                None => 0f64
+            }
+        }).collect()
+    )?;
+
+    send_chart(
+        token,
+        &chat_id,
+        "co2, ppm",
+        "co2.png",
+        &times,
+        &values.iter().map(|it| {
+            match it.co2 {
+                Some(v) => v,
+                None => 0f64
+            }
+        }).collect()
+    )?;
+
+    send_chart(
+        token,
+        &chat_id,
+        "Temperature, C",
+        "temperature.png",
+        &times,
+        &values.iter().map(|it| {
+            match it.temperature {
+                Some(v) => v,
+                None => 0f64
+            }
+        }).collect()
+    )?;
+
+    return Ok(String::from("Ok"));
+}
+
+pub fn handle_sensors_histogram_three_days(
+    token: &String,
+    update: &tgapi::Update,
+    storage: &storage::StoragePtr
+) -> std::result::Result<String, Box<dyn std::error::Error>> {
+    let time_offset:i64 = (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap() - Duration::from_secs(60 * 60 * 24 * 3)).as_secs() as i64;
+    let values = (*storage.lock().unwrap()).read().unwrap();
+    let values : std::vec::Vec::<&storage::SensorsData> = values.iter().filter(|x| x.timestamp < time_offset).collect();
+
+
     let times = values.iter().map(|it| {it.timestamp}).collect();
     let chat_id = update.message.chat.id.to_string().clone();
 
@@ -163,7 +237,7 @@ pub fn handle_erase(
     update: &tgapi::Update,
     storage: &storage::StoragePtr
 ) -> std::result::Result<String, Box<dyn std::error::Error>> {
-    (*storage.lock().unwrap()).erase_previous_weeks()?;
+    (*storage.lock().unwrap()).erase_previous_month()?;
     tgapi::send_message(
         token,
         &update.message.chat.id.to_string(),

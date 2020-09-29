@@ -123,12 +123,13 @@ impl Storage {
         Ok(iter.map(|data| {data.unwrap()}).collect::<std::vec::Vec<SensorsData>>()[0].clone())
     }
 
-    pub fn erase_previous_weeks(&self) -> std::result::Result<(), rusqlite::Error> {
+    pub fn erase_previous_month(&self) -> std::result::Result<(), rusqlite::Error> {
+        let time_offset = (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap() - Duration::from_secs(60 * 60 * 24 * 30)).as_secs();
         let mut request = self.connection
             .prepare(&format!(" \
                 DELETE FROM sensors \
                 WHERE timestamp < {}",
-                (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap() - Duration::from_secs(60 * 60 * 24 * 7)).as_secs()
+                time_offset
             ))?;
         request.execute(params![])?;
         return Ok(());
