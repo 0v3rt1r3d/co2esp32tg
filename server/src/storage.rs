@@ -56,7 +56,7 @@ impl Storage {
     pub fn save_sensors(&self, data: &SensorsData) -> std::result::Result<(), rusqlite::Error>{
         self.connection.execute(
             "INSERT INTO sensors (
-                timestamp, 
+                timestamp,
                 co2,
                 humidity,
                 pressure,
@@ -77,7 +77,7 @@ impl Storage {
     pub fn read(&self) -> Result<std::vec::Vec<SensorsData>> {
         let mut request = self.connection
             .prepare("
-            SELECT 
+            SELECT
                 timestamp,
                 co2,
                 humidity,
