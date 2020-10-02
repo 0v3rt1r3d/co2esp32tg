@@ -79,7 +79,18 @@ pub fn handle_sensors_histogram_all(
     update: &tgapi::Update,
     storage: &storage::StoragePtr
 ) -> std::result::Result<String, Box<dyn std::error::Error>> {
-    let values = (*storage.lock().unwrap()).read()?;
+    let count = 1000;
+
+    let all_values = (*storage.lock().unwrap()).read()?;
+    let n_th = all_values.len() / COUNT;
+    let mut values = std::vec::Vec::<&storage::SensorsData>::new();
+
+    for (i, x) in all_values.iter().enumerate() {
+        if i % n_th == 0 {
+            values.push(x);
+        }
+    }
+    
     let times = values.iter().map(|it| {it.timestamp}).collect();
     let chat_id = update.message.chat.id.to_string().clone();
 
