@@ -82,7 +82,7 @@ pub fn handle_sensors_histogram_all(
     let count = 1000;
 
     let all_values = (*storage.lock().unwrap()).read()?;
-    let n_th = all_values.len() / COUNT;
+    let n_th = all_values.len() / count;
     let mut values = std::vec::Vec::<&storage::SensorsData>::new();
 
     for (i, x) in all_values.iter().enumerate() {
