@@ -56,7 +56,7 @@ pub fn send_image(
         .multipart(form)
         .timeout(default_timeout())
         .build()?;
-        
+
 
     client.execute(request)?;
     return Ok(());

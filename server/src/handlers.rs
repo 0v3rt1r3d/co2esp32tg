@@ -90,7 +90,7 @@ pub fn handle_sensors_histogram_all(
             values.push(x);
         }
     }
-    
+
     let times = values.iter().map(|it| {it.timestamp}).collect();
     let chat_id = update.message.chat.id.to_string().clone();
 
@@ -158,9 +158,9 @@ pub fn handle_sensors_histogram_three_days(
     update: &tgapi::Update,
     storage: &storage::StoragePtr
 ) -> std::result::Result<String, Box<dyn std::error::Error>> {
-    let time_offset:i64 = (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap() - Duration::from_secs(60 * 60 * 24 * 3)).as_secs() as i64;
+    let from_timepoint:i64 = (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap() - Duration::from_secs(60 * 60 * 24 * 3)).as_secs() as i64;
     let values = (*storage.lock().unwrap()).read().unwrap();
-    let values : std::vec::Vec::<&storage::SensorsData> = values.iter().filter(|x| x.timestamp < time_offset).collect();
+    let values : std::vec::Vec::<&storage::SensorsData> = values.iter().filter(|x| x.timestamp > from_timepoint).collect();
 
 
     let times = values.iter().map(|it| {it.timestamp}).collect();
